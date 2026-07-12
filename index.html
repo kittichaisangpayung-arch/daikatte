@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>รายรับ-รายจ่าย | Dashboard</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+Thai:wght@500;700&family=Noto+Sans+Thai:wght@400;500;600&display=swap');
+  :root{
+    --ink:#232821; --paper:#F6F3EA; --rule:#D8D2C0;
+    --green:#2D6A4F; --green-l:#E4EEE7;
+    --red:#9A3B2E; --red-l:#F3E4E0;
+    --gold:#B98A2E; --gold-l:#F1E6CE;
+    --blue:#3E5C78; --blue-l:#E4EBF0;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; font-family:'Noto Sans Thai',sans-serif; background:var(--paper); color:var(--ink); padding:32px 24px;}
+  .wrap{max-width:1180px; margin:0 auto;}
+  .title{font-family:'Noto Serif Thai',serif;}
+  .header{display:flex; justify-content:space-between; align-items:flex-end; border-bottom:3px double var(--ink); padding-bottom:16px; margin-bottom:20px; flex-wrap:wrap; gap:12px;}
+  .eyebrow{font-size:11px; letter-spacing:.15em; color:var(--gold); font-weight:600; margin-bottom:4px;}
+  h1{font-size:28px; font-weight:700; margin:0;}
+  .refresh-btn{display:flex; align-items:center; gap:6px; background:#fff; border:1px solid var(--rule); border-radius:8px; padding:8px 14px; font-size:13px; cursor:pointer; font-family:inherit;}
+  .refresh-btn:hover{background:var(--paper);}
+  .spin{display:inline-block; animation:spin 1s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .meta{font-size:12px; color:#8a8878; margin-bottom:16px;}
+  .sync-note{font-size:12px; background:var(--gold-l); color:#7a5b1e; border:1px solid var(--gold); border-radius:8px; padding:8px 12px; margin-bottom:16px; display:none;}
+
+  .filter-bar{background:#fff; border:1px solid var(--rule); border-radius:10px; padding:14px 18px; margin-bottom:24px; display:flex; align-items:center; gap:20px; flex-wrap:wrap;}
+  .filter-group{display:flex; align-items:center; gap:8px;}
+  .filter-label{font-size:12px; color:#8a8878; font-weight:600;}
+  .tabs{display:flex; gap:4px; background:var(--paper); border-radius:8px; padding:3px;}
+  .tab-btn{border:none; background:transparent; padding:6px 14px; font-size:13px; font-family:inherit; border-radius:6px; cursor:pointer; color:var(--ink); font-weight:500;}
+  .tab-btn.active{background:var(--ink); color:#fff;}
+  .date-input{border:1px solid var(--rule); border-radius:6px; padding:6px 8px; font-size:13px; font-family:inherit; background:#fff; color:var(--ink);}
+  .clear-btn{border:1px solid var(--rule); background:#fff; border-radius:6px; padding:6px 12px; font-size:12px; cursor:pointer; font-family:inherit; color:#8a8878;}
+  .clear-btn:hover{background:var(--paper);}
+
+  .cards{display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:16px; margin-bottom:24px;}
+  .card{background:#fff; border:1px solid var(--rule); border-radius:10px; padding:16px 18px;}
+  .card.net{background:var(--ink);}
+  .card-label{display:flex; align-items:center; gap:8px; font-size:12px; font-weight:600; margin-bottom:8px;}
+  .card-value{font-size:24px; font-weight:700; font-family:'Noto Serif Thai',serif;}
+  .card-sub{font-size:11px; color:#8a8878; margin-top:4px;}
+
+  .biz-row{display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:24px;}
+  @media (max-width:640px){.biz-row{grid-template-columns:1fr;}}
+  .biz-card{background:#fff; border:1px solid var(--rule); border-left:4px solid var(--accent,var(--gold)); border-radius:10px; padding:18px 20px;}
+  .biz-card-head{display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;}
+  .biz-name{font-size:16px; font-weight:600; font-family:'Noto Serif Thai',serif;}
+  .biz-margin-badge{font-size:12px; font-weight:600; padding:3px 10px; border-radius:20px;}
+  .biz-stats{display:grid; grid-template-columns:repeat(4,1fr); gap:12px;}
+  @media (max-width:520px){.biz-stats{grid-template-columns:repeat(2,1fr);}}
+  .biz-stat-label{font-size:11px; color:#8a8878; margin-bottom:3px;}
+  .biz-stat-value{font-size:15px; font-weight:600;}
+
+  .charts{display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:24px;}
+  @media (max-width:720px){.charts{grid-template-columns:1fr;}}
+  .chart-box{background:#fff; border:1px solid var(--rule); border-radius:10px; padding:16px 18px;}
+  .chart-title{font-size:13px; font-weight:600; margin-bottom:12px;}
+  .table-box{background:#fff; border:1px solid var(--rule); border-radius:10px; padding:16px 18px; overflow-x:auto;}
+  table{border-collapse:collapse; width:100%;}
+  th{text-align:left; font-weight:600; font-size:12px; padding:8px 10px; border-bottom:2px solid var(--ink); white-space:nowrap;}
+  td{padding:9px 10px; border-bottom:1px solid var(--rule); font-size:13px; white-space:nowrap;}
+  tr:hover td{background:rgba(0,0,0,.02);}
+  .badge{padding:2px 8px; border-radius:20px; font-size:12px; font-weight:600;}
+  .badge.income{background:var(--green-l); color:var(--green);}
+  .badge.expense{background:var(--red-l); color:var(--red);}
+  .badge.credit{background:var(--blue-l); color:var(--blue);}
+  .badge.cash{background:var(--gold-l); color:#7a5b1e;}
+  .due-tag{font-size:11px; font-weight:600; padding:2px 7px; border-radius:20px; margin-left:6px;}
+  .due-tag.overdue{background:var(--red-l); color:var(--red);}
+  .due-tag.today{background:var(--gold-l); color:#7a5b1e;}
+  .confirm-btn{border:none; background:var(--green); color:#fff; font-size:11px; font-weight:600; padding:5px 10px; border-radius:6px; cursor:pointer; font-family:inherit;}
+  .confirm-btn:hover{background:#245c42;}
+  .confirmed-tag{font-size:11px; color:var(--green); font-weight:600;}
+  .error-box{background:var(--red-l); border:1px solid var(--red); border-radius:10px; padding:16px 18px; margin-bottom:24px; font-size:13px; color:var(--red); display:none;}
+  .error-box strong{display:block; margin-bottom:4px;}
+  .empty-note{font-size:12px; color:#8a8878; text-align:center; padding:20px;}
+  .table-hint{font-size:11px; color:#8a8878; text-align:right; margin-top:8px;}
+  tbody tr{cursor:pointer;}
+
+  .modal-overlay{display:none; position:fixed; inset:0; background:rgba(35,40,33,.55); z-index:100; align-items:center; justify-content:center; padding:20px;}
+  .modal-overlay.open{display:flex;}
+  .modal-box{background:var(--paper); border-radius:12px; max-width:560px; width:100%; max-height:85vh; overflow-y:auto; box-shadow:0 20px 50px rgba(0,0,0,.25);}
+  .modal-head{display:flex; justify-content:space-between; align-items:center; padding:16px 20px; border-bottom:2px solid var(--ink); position:sticky; top:0; background:var(--paper);}
+  .modal-title{font-family:'Noto Serif Thai',serif; font-size:18px; font-weight:700;}
+  .modal-close{border:none; background:transparent; font-size:22px; line-height:1; cursor:pointer; color:var(--ink); padding:0 4px;}
+  .modal-body{padding:20px;}
+  .modal-image-wrap{width:100%; border-radius:8px; overflow:hidden; margin-bottom:16px; background:#fff; border:1px solid var(--rule); min-height:80px; display:flex; align-items:center; justify-content:center;}
+  .modal-image-wrap img{width:100%; max-height:320px; object-fit:contain; display:block;}
+  .modal-image-fallback{font-size:12px; color:#8a8878; padding:24px; text-align:center; line-height:1.6;}
+  .image-gallery{display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:10px; margin-bottom:16px;}
+  .image-gallery-item{border-radius:8px; overflow:hidden; background:#fff; border:1px solid var(--rule); min-height:100px; display:flex; align-items:center; justify-content:center; aspect-ratio:1/1; cursor:zoom-in;}
+  .image-gallery-item img{width:100%; height:100%; object-fit:cover; display:block;}
+  .image-gallery-fallback{font-size:11px; color:#8a8878; padding:10px; text-align:center; line-height:1.5;}
+  .lightbox-overlay{display:none; position:fixed; inset:0; background:rgba(0,0,0,.8); z-index:200; align-items:center; justify-content:center; padding:24px; cursor:zoom-out;}
+  .lightbox-overlay.open{display:flex;}
+  .lightbox-overlay img{max-width:100%; max-height:90vh; border-radius:6px;}
+  .modal-grid{display:grid; grid-template-columns:1fr 1fr; gap:12px 20px;}
+  @media (max-width:480px){.modal-grid{grid-template-columns:1fr;}}
+  .modal-field-label{font-size:11px; color:#8a8878; margin-bottom:2px;}
+  .modal-field-value{font-size:14px; font-weight:600;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="header">
+    <div>
+      <div class="eyebrow">สมุดบัญชี · LIVE จาก GOOGLE SHEET</div>
+      <h1 class="title">รายรับ–รายจ่าย</h1>
+    </div>
+    <button class="refresh-btn" id="refreshBtn" onclick="loadData()">
+      <span id="refreshIcon">&#8635;</span> <span id="refreshLabel">รีเฟรชข้อมูล</span>
+    </button>
+  </div>
+
+  <div class="error-box" id="errorBox">
+    <strong>ดึงข้อมูลจาก Google Sheet ไม่ได้</strong>
+    <span id="errorMsg"></span>
+  </div>
+
+  <div class="sync-note" id="syncNote">
+    หมายเหตุ: ยังไม่ได้เชื่อมต่อการเขียนกลับ Google Sheet — การกด "ยืนยันรับเงินแล้ว" จะอัปเดตหน้าจอนี้ทันที แต่จะหายไปเมื่อรีเฟรชหน้า/โหลดใหม่ (ข้อมูลใน Sheet จริงยังไม่เปลี่ยน) ดูวิธีตั้งค่าให้บันทึกถาวรได้ที่ท้ายข้อความ
+  </div>
+
+  <div class="filter-bar">
+    <div class="filter-group">
+      <span class="filter-label">ธุรกิจ</span>
+      <div class="tabs" id="bizTabs">
+        <button class="tab-btn active" data-biz="all">ทั้งหมด</button>
+        <button class="tab-btn" data-biz="Donki">Donki</button>
+        <button class="tab-btn" data-biz="SweetHome">SweetHome</button>
+      </div>
+    </div>
+    <div class="filter-group">
+      <span class="filter-label">การรับเงิน</span>
+      <div class="tabs" id="methodTabs">
+        <button class="tab-btn active" data-method="all">ทั้งหมด</button>
+        <button class="tab-btn" data-method="เครดิต">เครดิต</button>
+        <button class="tab-btn" data-method="เงินสด">เงินสด</button>
+      </div>
+    </div>
+    <div class="filter-group">
+      <span class="filter-label">ช่วงวันที่</span>
+      <input type="date" class="date-input" id="dateFrom">
+      <span style="color:#8a8878">ถึง</span>
+      <input type="date" class="date-input" id="dateTo">
+    </div>
+    <button class="clear-btn" onclick="clearFilters()">ล้างตัวกรอง</button>
+  </div>
+
+  <div class="meta" id="metaLine"></div>
+
+  <div class="cards">
+    <div class="card">
+      <div class="card-label" style="color:var(--green)">รายรับรวม</div>
+      <div class="card-value" id="incomeTotal">฿0</div>
+    </div>
+    <div class="card">
+      <div class="card-label" style="color:var(--red)">รายจ่ายรวม</div>
+      <div class="card-value" id="expenseTotal">฿0</div>
+    </div>
+    <div class="card net">
+      <div class="card-label" style="color:var(--gold-l)">กำไรสุทธิ</div>
+      <div class="card-value" id="netTotal" style="color:#fff">฿0</div>
+    </div>
+    <div class="card">
+      <div class="card-label" style="color:var(--blue)">อัตรากำไร</div>
+      <div class="card-value" id="marginTotal">0%</div>
+    </div>
+    <div class="card">
+      <div class="card-label" style="color:var(--gold)">VAT รวม</div>
+      <div class="card-value" id="vatTotal">฿0</div>
+    </div>
+    <div class="card">
+      <div class="card-label" style="color:var(--blue)">เครดิตค้างรับ</div>
+      <div class="card-value" id="creditOutstanding">฿0</div>
+      <div class="card-sub" id="creditOutstandingSub"></div>
+    </div>
+  </div>
+
+  <div class="biz-row" id="bizRow"></div>
+
+  <div class="charts">
+    <div class="chart-box">
+      <div class="chart-title">รายรับ–รายจ่าย แยกตามสาขา</div>
+      <div style="position:relative;height:230px;">
+        <canvas id="branchChart" role="img" aria-label="กราฟแท่งเปรียบเทียบรายรับและรายจ่ายแยกตามสาขา"></canvas>
+      </div>
+    </div>
+    <div class="chart-box">
+      <div class="chart-title">รายรับ–รายจ่าย แยกตามหมวดหมู่</div>
+      <div style="position:relative;height:230px;">
+        <canvas id="categoryChart" role="img" aria-label="กราฟแท่งเปรียบเทียบรายรับและรายจ่ายแยกตามหมวดหมู่"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="table-box">
+    <div class="chart-title">รายการทั้งหมด</div>
+    <table>
+      <thead>
+        <tr>
+          <th>วันที่</th><th>สินค้า</th><th>ประเภท</th><th>หมวดหมู่</th><th>รายละเอียด</th>
+          <th style="text-align:right">จำนวนเงิน</th><th style="text-align:right">VAT</th>
+          <th>การรับเงิน</th><th>เงินจะเข้าวันที่</th><th>สาขา</th><th>ผู้รับผิดชอบ</th><th>สถานะ</th>
+        </tr>
+      </thead>
+      <tbody id="tableBody"></tbody>
+    </table>
+    <div class="empty-note" id="emptyNote" style="display:none;">ไม่มีรายการในช่วงที่เลือก</div>
+    <div class="table-hint">คลิกที่แถวเพื่อดูรายละเอียดทั้งหมด</div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalOverlay" onclick="if(event.target===this) closeDetail()">
+  <div class="modal-box">
+    <div class="modal-head">
+      <div class="modal-title" id="modalTitle">รายละเอียดรายการ</div>
+      <button class="modal-close" onclick="closeDetail()">&times;</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+  </div>
+</div>
+
+<div class="lightbox-overlay" id="lightboxOverlay" onclick="closeLightbox()">
+  <img id="lightboxImg" src="" alt="รูปขยาย">
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+const SHEET_ID = "1ZO1EV2SSWl4RaxckqieZ7vFX_3k2Ef5qTHon0Ftt4EM";
+const GID = "1415721860";
+const CSV_URL = "https://docs.google.com/spreadsheets/d/" + SHEET_ID + "/gviz/tq?tqx=out:csv&gid=" + GID;
+
+// If you deploy the Google Apps Script web app (see instructions), paste its URL here
+// to make "ยืนยันรับเงินแล้ว" write back to the actual Google Sheet permanently.
+const WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbxReWJ1H8xZrk7aEyDg4rF-JdIOVYS4MYkMszLG4dvk1TQWTvnETe02JHIopTNRs2o/exec";
+
+const BIZ_COLORS = { Donki: "#B98A2E", SweetHome: "#3E5C78" };
+const MONTHS = {Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
+const THAI_MONTHS = ["มกราคม","กุมภาพันธ์","มีนาคม","เมษายน","พฤษภาคม","มิถุนายน","กรกฎาคม","สิงหาคม","กันยายน","ตุลาคม","พฤศจิกายน","ธันวาคม"];
+
+let allRows = [];
+let branchChart, categoryChart;
+let activeBiz = "all";
+let activeMethod = "all";
+const confirmedKeys = new Set();
+
+function thb(n){
+  n = Number.isFinite(n) ? n : 0;
+  return "฿" + n.toLocaleString("en-US", {minimumFractionDigits:0});
+}
+function parseMoney(v){
+  if(v === undefined || v === null) return 0;
+  const n = parseFloat(String(v).replace(/[^0-9.-]/g,""));
+  return Number.isFinite(n) ? n : 0;
+}
+function parseSheetDate(v){
+  if(!v) return null;
+  const m = String(v).trim().match(/^(\d{1,2})\/([A-Za-z]{3})\/(\d{2,4})$/);
+  if(!m) return null;
+  const day = parseInt(m[1],10);
+  const mon = MONTHS[m[2]];
+  let yr = parseInt(m[3],10);
+  if(yr < 100) yr += 2000;
+  if(mon === undefined) return null;
+  return new Date(yr, mon, day);
+}
+// Parses "เงินจะเข้าวันที่" which can be like "8 กันยายน 2026", "8/10/2026" (M/D/YYYY), or "10/Jul/26" (D/Mon/YY)
+function parseFlexibleDate(v){
+  if(!v || v === "-") return null;
+  const str = String(v).trim();
+  const thaiMatch = str.match(/^(\d{1,2})\s+([\u0E00-\u0E7F]+)\s+(\d{4})$/);
+  if(thaiMatch){
+    const day = parseInt(thaiMatch[1],10);
+    const monIdx = THAI_MONTHS.indexOf(thaiMatch[2]);
+    const year = parseInt(thaiMatch[3],10);
+    if(monIdx >= 0) return new Date(year, monIdx, day);
+  }
+  const abbrevMatch = str.match(/^(\d{1,2})\/([A-Za-z]{3})\/(\d{2,4})$/);
+  if(abbrevMatch){
+    const day = parseInt(abbrevMatch[1],10);
+    const mon = MONTHS[abbrevMatch[2]];
+    let yr = parseInt(abbrevMatch[3],10);
+    if(yr < 100) yr += 2000;
+    if(mon !== undefined) return new Date(yr, mon, day);
+  }
+  const slashMatch = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if(slashMatch){
+    const month = parseInt(slashMatch[1],10) - 1;
+    const day = parseInt(slashMatch[2],10);
+    const year = parseInt(slashMatch[3],10);
+    return new Date(year, month, day);
+  }
+  return null;
+}
+function startOfToday(){
+  const d = new Date();
+  d.setHours(0,0,0,0);
+  return d;
+}
+function fmtDate(d){
+  if(!d) return "-";
+  return d.getDate() + "/" + (d.getMonth()+1) + "/" + d.getFullYear();
+}
+
+function openDetail(key){
+  const r = allRows.find(x => x.key === key);
+  if(!r) return;
+
+  const signColor = r.type === "รายได้" ? "var(--green)" : "var(--red)";
+  const sign = r.type === "รายจ่าย" ? "-" : "+";
+
+  const fields = [
+    ["วันที่", r.dateRaw],
+    ["สินค้า/ธุรกิจ", r.product],
+    ["ประเภท", r.type],
+    ["หมวดหมู่", r.category],
+    ["รายละเอียด", r.desc || "-"],
+    ["จำนวนเงิน", sign + thb(r.amount)],
+    ["VAT", r.vat ? thb(r.vat) : "-"],
+    ["การรับเงิน", r.method],
+    ["ระยะเครดิต", r.term !== "-" ? r.term + " วัน" : "-"],
+    ["เงินจะเข้าวันที่", r.incomingRaw],
+    ["สาขา", r.branch],
+    ["จำนวน (Quantity)", r.quantity],
+    ["ผู้รับผิดชอบ", r.owner],
+    ["วันที่บันทึก (Billing)", r.billing],
+    ["Key", r.key]
+  ];
+
+  const galleryHtml = r.pics.length > 0
+    ? "<div class='image-gallery' id='imageGallery'>" +
+        r.pics.map((_, i) => "<div class='image-gallery-item' id='galleryItem" + i + "'><div class='image-gallery-fallback'>กำลังโหลด...</div></div>").join("") +
+      "</div>"
+    : "<div class='modal-image-wrap'><div class='modal-image-fallback'>ไม่มีรูปแนบสำหรับรายการนี้</div></div>";
+
+  document.getElementById("modalTitle").textContent = r.product + " · " + r.desc;
+  document.getElementById("modalBody").innerHTML =
+    galleryHtml +
+    "<div class='modal-grid'>" +
+    fields.map(([label,val]) =>
+      "<div><div class='modal-field-label'>" + label + "</div><div class='modal-field-value' style='" +
+      (label === "จำนวนเงิน" ? "color:" + signColor : "") + "'>" + (val || "-") + "</div></div>"
+    ).join("") +
+    "</div>";
+
+  document.getElementById("modalOverlay").classList.add("open");
+
+  r.pics.forEach((picPath, i) => loadGalleryImage_(picPath, i));
+}
+
+function loadGalleryImage_(picPath, index){
+  const cell = document.getElementById("galleryItem" + index);
+  if(!cell) return;
+
+  if(!WEBHOOK_URL){
+    cell.innerHTML = "<div class='image-gallery-fallback'>ยังไม่ได้ตั้งค่า WEBHOOK_URL</div>";
+    return;
+  }
+
+  fetch(WEBHOOK_URL + "?action=getImage&path=" + encodeURIComponent(picPath))
+    .then(res => res.json())
+    .then(data => {
+      if(data.success && data.url){
+        cell.innerHTML = "<img src='" + data.url + "' alt='รูปประกอบรายการ' onclick=\"openLightbox('" + data.url + "')\" " +
+          "onerror=\"this.parentElement.innerHTML='<div class=&quot;image-gallery-fallback&quot;>โหลดรูปไม่ขึ้น</div>'\">";
+      } else {
+        cell.innerHTML = "<div class='image-gallery-fallback'>หาไม่เจอ: " + (data.error || "-") + "</div>";
+      }
+    })
+    .catch(() => {
+      cell.innerHTML = "<div class='image-gallery-fallback'>เชื่อมต่อไม่ได้</div>";
+    });
+}
+
+function openLightbox(url){
+  document.getElementById("lightboxImg").src = url;
+  document.getElementById("lightboxOverlay").classList.add("open");
+}
+function closeLightbox(){
+  document.getElementById("lightboxOverlay").classList.remove("open");
+}
+
+
+function closeDetail(){
+  document.getElementById("modalOverlay").classList.remove("open");
+}
+
+document.getElementById("bizTabs").addEventListener("click", (e) => {
+  if(e.target.classList.contains("tab-btn")){
+    document.querySelectorAll("#bizTabs .tab-btn").forEach(b => b.classList.remove("active"));
+    e.target.classList.add("active");
+    activeBiz = e.target.dataset.biz;
+    applyFiltersAndRender();
+  }
+});
+document.getElementById("methodTabs").addEventListener("click", (e) => {
+  if(e.target.classList.contains("tab-btn")){
+    document.querySelectorAll("#methodTabs .tab-btn").forEach(b => b.classList.remove("active"));
+    e.target.classList.add("active");
+    activeMethod = e.target.dataset.method;
+    applyFiltersAndRender();
+  }
+});
+document.getElementById("dateFrom").addEventListener("change", applyFiltersAndRender);
+document.getElementById("dateTo").addEventListener("change", applyFiltersAndRender);
+
+function clearFilters(){
+  document.getElementById("dateFrom").value = "";
+  document.getElementById("dateTo").value = "";
+  activeBiz = "all";
+  activeMethod = "all";
+  document.querySelectorAll("#bizTabs .tab-btn").forEach(b => b.classList.remove("active"));
+  document.querySelector('#bizTabs .tab-btn[data-biz="all"]').classList.add("active");
+  document.querySelectorAll("#methodTabs .tab-btn").forEach(b => b.classList.remove("active"));
+  document.querySelector('#methodTabs .tab-btn[data-method="all"]').classList.add("active");
+  applyFiltersAndRender();
+}
+
+function confirmReceived(key){
+  const row = allRows.find(r => r.key === key);
+  if(!row) return;
+  row.method = "เงินสด";
+  confirmedKeys.add(key);
+  applyFiltersAndRender();
+
+  if(WEBHOOK_URL){
+    const note = document.getElementById("syncNote");
+    note.style.display = "block";
+    note.style.background = "var(--gold-l)";
+    note.style.color = "#7a5b1e";
+    note.style.borderColor = "var(--gold)";
+    note.textContent = "กำลังบันทึกลง Google Sheet...";
+
+    // Apps Script web apps don't return readable CORS headers to fetch(),
+    // so we fire the request in no-cors mode, then re-pull the sheet
+    // shortly after to confirm the change actually landed.
+    fetch(WEBHOOK_URL, {
+      method: "POST",
+      mode: "no-cors",
+      body: JSON.stringify({ key: key, action: "confirm_received" })
+    })
+      .then(() => {
+        setTimeout(() => {
+          fetch(CSV_URL)
+            .then(res => res.text())
+            .then(text => {
+              const parsed = Papa.parse(text, {header:true, skipEmptyLines:true});
+              const updated = parsed.data.find(r => r["Key"] === key);
+              const actuallyCash = updated && (updated["Transaction Type"] || "").trim() === "เงินสด";
+              if(actuallyCash){
+                note.style.background = "var(--green-l)";
+                note.style.color = "var(--green)";
+                note.style.borderColor = "var(--green)";
+                note.textContent = "บันทึกลง Google Sheet สำเร็จแล้ว (รายการ " + key + ")";
+              } else {
+                note.style.background = "var(--red-l)";
+                note.style.color = "var(--red)";
+                note.style.borderColor = "var(--red)";
+                note.textContent = "ยังไม่พบการเปลี่ยนแปลงใน Sheet สำหรับรายการ " + key + " ลองกดรีเฟรชข้อมูลแล้วลองใหม่อีกครั้ง";
+              }
+            })
+            .catch(() => {
+              note.textContent = "บันทึกคำขอไปแล้ว แต่ตรวจสอบผลลัพธ์ไม่ได้ ลองกดรีเฟรชข้อมูลเพื่อเช็คด้วยตาอีกครั้ง";
+            });
+        }, 1500);
+      })
+      .catch(() => {
+        note.style.background = "var(--red-l)";
+        note.style.color = "var(--red)";
+        note.style.borderColor = "var(--red)";
+        note.textContent = "เชื่อมต่อ Web App ไม่ได้ ลองใหม่อีกครั้ง (การเปลี่ยนแปลงบนหน้าจอนี้ยังคงอยู่ชั่วคราว)";
+      });
+  } else {
+    document.getElementById("syncNote").style.display = "block";
+  }
+}
+
+function loadData(){
+  document.getElementById("refreshIcon").classList.add("spin");
+  document.getElementById("refreshLabel").textContent = "กำลังโหลด...";
+  document.getElementById("errorBox").style.display = "none";
+
+  fetch(CSV_URL)
+    .then(res => { if(!res.ok) throw new Error("HTTP " + res.status); return res.text(); })
+    .then(text => {
+      if(text.trim().startsWith("<")) throw new Error("no_public_access");
+      const parsed = Papa.parse(text, {header:true, skipEmptyLines:true});
+      allRows = parsed.data.map(r => ({
+        key: r["Key"] || "",
+        dateRaw: r["วันที่"] || "-",
+        date: parseSheetDate(r["วันที่"]),
+        product: (r["Product"] || "-").trim(),
+        type: (r["Transaction Catagory"] || "").trim(),
+        category: r["Catagory"] || "-",
+        desc: r["Description"] || "",
+        amount: parseMoney(r["Amount"]),
+        vat: parseMoney(r["VAT"]),
+        method: (r["Transaction Type"] || "-").trim(),
+        term: r["Term Credit"] || "-",
+        branch: r["Branch"] || "-",
+        quantity: r["Quantity"] || "-",
+        owner: r["Owner"] || "-",
+        billing: r["Billing"] || "-",
+        pics: [r["pic1"], r["pic2"], r["pic3"], r["pic"]]
+          .filter(Boolean)
+          .map(s => String(s).trim())
+          .filter(s => s.length > 0),
+        incomingRaw: r["เงินจะเข้าวันที่"] || "-",
+        incomingDate: parseFlexibleDate(r["เงินจะเข้าวันที่"])
+      })).filter(r => r.amount > 0 && (r.type === "รายได้" || r.type === "รายจ่าย"));
+      applyFiltersAndRender();
+    })
+    .catch(e => {
+      const box = document.getElementById("errorBox");
+      box.style.display = "block";
+      document.getElementById("errorMsg").textContent =
+        e.message === "no_public_access"
+          ? 'Sheet นี้ยังไม่เปิดสิทธิ์แบบสาธารณะ ให้ไปที่ Google Sheet > Share > เปลี่ยนเป็น "Anyone with the link" แล้วกดรีเฟรชอีกครั้ง'
+          : "เกิดข้อผิดพลาด: " + e.message + " ลองกดรีเฟรชอีกครั้ง";
+    })
+    .finally(() => {
+      document.getElementById("refreshIcon").classList.remove("spin");
+      document.getElementById("refreshLabel").textContent = "รีเฟรชข้อมูล";
+    });
+}
+
+function applyFiltersAndRender(){
+  const fromVal = document.getElementById("dateFrom").value;
+  const toVal = document.getElementById("dateTo").value;
+  const from = fromVal ? new Date(fromVal) : null;
+  const to = toVal ? new Date(toVal) : null;
+  if(to) to.setHours(23,59,59,999);
+
+  let excludedNoDate = 0;
+  const rows = allRows.filter(r => {
+    if(activeBiz !== "all" && r.product !== activeBiz) return false;
+    if(activeMethod !== "all" && r.method !== activeMethod) return false;
+    if(from || to){
+      if(!r.date){ excludedNoDate++; return false; }
+      if(from && r.date < from) return false;
+      if(to && r.date > to) return false;
+    }
+    return true;
+  });
+
+  render(rows, excludedNoDate);
+}
+
+function calcStats(rows){
+  let income = 0, expense = 0, vatOnIncome = 0, vatOnExpense = 0;
+  rows.forEach(r => {
+    if(r.type === "รายได้"){ income += r.amount; vatOnIncome += r.vat || 0; }
+    else { expense += r.amount; vatOnExpense += r.vat || 0; }
+  });
+  const net = income - expense;
+  const margin = income > 0 ? (net / income * 100) : 0;
+  const vatTotal = vatOnIncome + vatOnExpense;
+  return {income, expense, net, margin, vatOnIncome, vatOnExpense, vatTotal};
+}
+
+function render(rows, excludedNoDate){
+  const overall = calcStats(rows);
+  document.getElementById("incomeTotal").textContent = thb(overall.income);
+  document.getElementById("expenseTotal").textContent = thb(overall.expense);
+  document.getElementById("netTotal").textContent = thb(overall.net);
+  document.getElementById("marginTotal").textContent = overall.margin.toFixed(1) + "%";
+  document.getElementById("vatTotal").textContent = thb(overall.vatTotal);
+
+  const creditRows = rows.filter(r => r.method === "เครดิต");
+  const creditOutstanding = creditRows.reduce((s,r) => s + r.amount, 0);
+  document.getElementById("creditOutstanding").textContent = thb(creditOutstanding);
+  document.getElementById("creditOutstandingSub").textContent = creditRows.length + " รายการยังไม่รับเงิน";
+
+  let metaText = rows.length + " รายการ · ดึงข้อมูลล่าสุด " + new Date().toLocaleTimeString("th-TH");
+  if(excludedNoDate > 0) metaText += " · ซ่อน " + excludedNoDate + " รายการที่ไม่มีวันที่ (เพราะกรองตามช่วงวันที่)";
+  document.getElementById("metaLine").textContent = metaText;
+
+  const bizRow = document.getElementById("bizRow");
+  const businesses = [...new Set(allRows.map(r => r.product))];
+  bizRow.innerHTML = businesses.map(biz => {
+    const bizRows = rows.filter(r => r.product === biz);
+    const s = calcStats(bizRows);
+    const color = BIZ_COLORS[biz] || "#8a8878";
+    const marginColor = s.margin >= 0 ? "var(--green)" : "var(--red)";
+    const marginBg = s.margin >= 0 ? "var(--green-l)" : "var(--red-l)";
+    return "<div class='biz-card' style='--accent:" + color + "'>" +
+      "<div class='biz-card-head'>" +
+        "<span class='biz-name'>" + biz + "</span>" +
+        "<span class='biz-margin-badge' style='background:" + marginBg + ";color:" + marginColor + "'>อัตรากำไร " + s.margin.toFixed(1) + "%</span>" +
+      "</div>" +
+      "<div class='biz-stats'>" +
+        "<div><div class='biz-stat-label'>รายรับ</div><div class='biz-stat-value' style='color:var(--green)'>" + thb(s.income) + "</div></div>" +
+        "<div><div class='biz-stat-label'>รายจ่าย</div><div class='biz-stat-value' style='color:var(--red)'>" + thb(s.expense) + "</div></div>" +
+        "<div><div class='biz-stat-label'>กำไรสุทธิ</div><div class='biz-stat-value'>" + thb(s.net) + "</div></div>" +
+        "<div><div class='biz-stat-label'>VAT รวม</div><div class='biz-stat-value' style='color:var(--gold)'>" + thb(s.vatTotal) + "</div></div>" +
+      "</div>" +
+    "</div>";
+  }).join("");
+
+  const byBranch = {};
+  rows.forEach(r => {
+    if(!byBranch[r.branch]) byBranch[r.branch] = {income:0, expense:0};
+    if(r.type === "รายได้") byBranch[r.branch].income += r.amount; else byBranch[r.branch].expense += r.amount;
+  });
+  const branchLabels = Object.keys(byBranch);
+
+  if(branchChart) branchChart.destroy();
+  branchChart = new Chart(document.getElementById("branchChart"), {
+    type: "bar",
+    data: {
+      labels: branchLabels,
+      datasets: [
+        {label:"รายรับ", data:branchLabels.map(b=>byBranch[b].income), backgroundColor:"#2D6A4F", borderRadius:4},
+        {label:"รายจ่าย", data:branchLabels.map(b=>byBranch[b].expense), backgroundColor:"#9A3B2E", borderRadius:4}
+      ]
+    },
+    options: {
+      responsive:true, maintainAspectRatio:false,
+      scales:{ y:{ beginAtZero:true, ticks:{ callback:v => (v/1000)+"k" } } },
+      plugins:{ legend:{ position:"top", labels:{ boxWidth:10, font:{size:12} } },
+        tooltip:{ callbacks:{ label: ctx => ctx.dataset.label + ": " + thb(ctx.raw) } } }
+    }
+  });
+
+  const byCat = {};
+  rows.forEach(r => {
+    if(!byCat[r.category]) byCat[r.category] = {income:0, expense:0};
+    if(r.type === "รายได้") byCat[r.category].income += r.amount; else byCat[r.category].expense += r.amount;
+  });
+  const catLabels = Object.keys(byCat);
+
+  if(categoryChart) categoryChart.destroy();
+  categoryChart = new Chart(document.getElementById("categoryChart"), {
+    type: "bar",
+    data: {
+      labels: catLabels,
+      datasets: [
+        {label:"รายรับ", data:catLabels.map(c=>byCat[c].income), backgroundColor:"#2D6A4F", borderRadius:4},
+        {label:"รายจ่าย", data:catLabels.map(c=>byCat[c].expense), backgroundColor:"#9A3B2E", borderRadius:4}
+      ]
+    },
+    options: {
+      responsive:true, maintainAspectRatio:false,
+      scales:{ y:{ beginAtZero:true, ticks:{ callback:v => (v/1000)+"k" } } },
+      plugins:{ legend:{ position:"top", labels:{ boxWidth:10, font:{size:12} } },
+        tooltip:{ callbacks:{ label: ctx => ctx.dataset.label + ": " + thb(ctx.raw) } } }
+    }
+  });
+
+  const tbody = document.getElementById("tableBody");
+  const emptyNote = document.getElementById("emptyNote");
+  const today = startOfToday();
+
+  if(rows.length === 0){
+    tbody.innerHTML = "";
+    emptyNote.style.display = "block";
+  } else {
+    emptyNote.style.display = "none";
+    tbody.innerHTML = rows.map(r => {
+      const typeCls = r.type === "รายได้" ? "income" : "expense";
+      const sign = r.type === "รายจ่าย" ? "-" : "+";
+      const methodCls = r.method === "เครดิต" ? "credit" : "cash";
+
+      let incomingCell = r.incomingRaw;
+      let statusCell = "-";
+      if(r.method === "เครดิต"){
+        if(r.incomingDate){
+          const due = new Date(r.incomingDate); due.setHours(0,0,0,0);
+          if(due < today){
+            incomingCell += "<span class='due-tag overdue'>เลยกำหนด</span>";
+            statusCell = "<button class='confirm-btn' onclick=\"confirmReceived('" + r.key + "')\">ยืนยันรับเงินแล้ว</button>";
+          } else if(due.getTime() === today.getTime()){
+            incomingCell += "<span class='due-tag today'>ถึงกำหนดวันนี้</span>";
+            statusCell = "<button class='confirm-btn' onclick=\"confirmReceived('" + r.key + "')\">ยืนยันรับเงินแล้ว</button>";
+          } else {
+            statusCell = "<span style='color:#8a8878'>รอครบกำหนด</span>";
+          }
+        } else {
+          statusCell = "<span style='color:#8a8878'>รอครบกำหนด</span>";
+        }
+      } else if(confirmedKeys.has(r.key)){
+        statusCell = "<span class='confirmed-tag'>&#10003; รับเงินแล้ว</span>";
+      }
+
+      return "<tr onclick=\"openDetail('" + r.key + "')\">" +
+        "<td>" + r.dateRaw + "</td>" +
+        "<td>" + r.product + "</td>" +
+        "<td><span class='badge " + typeCls + "'>" + r.type + "</span></td>" +
+        "<td>" + r.category + "</td>" +
+        "<td style='color:#6b6a63'>" + r.desc + "</td>" +
+        "<td style='text-align:right;font-weight:600;color:" + (r.type === "รายได้" ? "#2D6A4F" : "#9A3B2E") + "'>" + sign + thb(r.amount) + "</td>" +
+        "<td style='text-align:right;color:#6b6a63'>" + (r.vat ? thb(r.vat) : "-") + "</td>" +
+        "<td><span class='badge " + methodCls + "'>" + r.method + "</span></td>" +
+        "<td>" + incomingCell + "</td>" +
+        "<td>" + r.branch + "</td>" +
+        "<td>" + r.owner + "</td>" +
+        "<td onclick=\"event.stopPropagation()\">" + statusCell + "</td>" +
+        "</tr>";
+    }).join("");
+  }
+}
+
+loadData();
+</script>
+</body>
+</html>
