@@ -57,6 +57,16 @@
   .search-summary-label{font-size:12px; font-weight:600; margin-bottom:6px;}
   .search-summary-value{font-size:28px; font-weight:700; font-family:'Noto Serif Thai',serif;}
 
+  .login-overlay{position:fixed; inset:0; background:var(--paper); display:flex; align-items:center; justify-content:center; z-index:300; padding:20px;}
+  .login-box{background:#fff; border:1px solid var(--rule); border-radius:14px; padding:32px 28px; width:100%; max-width:360px; box-shadow:0 20px 50px rgba(0,0,0,.08);}
+  .login-field{margin-bottom:16px;}
+  .login-field label{display:block; font-size:12px; color:#8a8878; font-weight:600; margin-bottom:6px;}
+  .login-field input{width:100%; border:1px solid var(--rule); border-radius:8px; padding:10px 12px; font-size:14px; font-family:inherit; background:#fff; color:var(--ink);}
+  .login-error{color:var(--red); font-size:12px; margin-bottom:12px;}
+  .login-btn{width:100%; border:none; background:var(--ink); color:#fff; border-radius:8px; padding:11px; font-size:14px; font-weight:600; cursor:pointer; font-family:inherit; margin-top:4px;}
+  .login-btn:hover{background:#3a4139;}
+  .login-hint{font-size:11px; color:#8a8878; margin-top:16px; line-height:1.5; text-align:center;}
+
 
   .cards{display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:16px; margin-bottom:24px;}
   .card{background:#fff; border:1px solid var(--rule); border-radius:10px; padding:16px 18px;}
@@ -142,13 +152,33 @@
 </style>
 </head>
 <body>
-<div class="wrap">
+
+<div class="login-overlay" id="loginOverlay">
+  <div class="login-box">
+    <div class="eyebrow" style="margin-bottom:6px;">สมุดบัญชี · LIVE จาก GOOGLE SHEET</div>
+    <h1 class="title" style="font-size:24px; margin:0 0 20px;">เข้าสู่ระบบ</h1>
+    <div class="login-field">
+      <label>ชื่อของคุณ</label>
+      <input type="text" id="loginNameInput" placeholder="เช่น แพรว" autocomplete="off">
+    </div>
+    <div class="login-field">
+      <label>รหัสผ่าน</label>
+      <input type="password" id="loginPinInput" placeholder="รหัสผ่านทีม" autocomplete="off">
+    </div>
+    <div class="login-error" id="loginError" style="display:none;">ชื่อหรือรหัสผ่านไม่ถูกต้อง กรุณาลองใหม่</div>
+    <button class="login-btn" onclick="attemptLogin()">เข้าสู่ระบบ</button>
+    <div class="login-hint">ระบบนี้ใช้รหัสผ่านร่วมของทีมเพื่อกันคนนอกเข้าดูโดยไม่ตั้งใจ ไม่ใช่ระบบยืนยันตัวตนระดับสูง</div>
+  </div>
+</div>
+
+<div class="wrap" id="mainWrap" style="display:none;">
   <div class="header">
     <div>
       <div class="eyebrow">สมุดบัญชี · LIVE จาก GOOGLE SHEET</div>
       <h1 class="title">รายรับ–รายจ่าย</h1>
     </div>
-    <div style="display:flex; gap:8px;">
+    <div style="display:flex; gap:8px; align-items:center;">
+      <span id="loggedInAs" style="font-size:12px; color:#8a8878;"></span>
       <button class="refresh-btn" id="refreshBtn" onclick="loadData()">
         <span id="refreshIcon">&#8635;</span> <span id="refreshLabel">รีเฟรชข้อมูล</span>
       </button>
@@ -471,6 +501,10 @@ const CSV_URL = "https://docs.google.com/spreadsheets/d/" + SHEET_ID + "/gviz/tq
 // to make "ยืนยันรับเงินแล้ว" write back to the actual Google Sheet permanently.
 const WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbxReWJ1H8xZrk7aEyDg4rF-JdIOVYS4MYkMszLG4dvk1TQWTvnETe02JHIopTNRs2o/exec";
 
+// รหัสผ่านร่วมของทีม (แก้ตรงนี้เพื่อเปลี่ยนรหัส) — เป็นแค่ตัวกันเบื้องต้น ไม่ใช่ระบบความปลอดภัยระดับสูง
+const DASHBOARD_PASSWORD = "1112";
+let currentUser = null;
+
 const BIZ_COLORS = { Donki: "#B98A2E", SweetHome: "#3E5C78" };
 const MONTHS = {Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
 const THAI_MONTHS = ["มกราคม","กุมภาพันธ์","มีนาคม","เมษายน","พฤษภาคม","มิถุนายน","กรกฎาคม","สิงหาคม","กันยายน","ตุลาคม","พฤศจิกายน","ธันวาคม"];
@@ -591,7 +625,8 @@ function openDetail(key){
     ["จำนวน (Quantity)", r.quantity],
     ["ผู้รับผิดชอบ", r.owner],
     ["วันที่บันทึก (Billing)", r.billing],
-    ["Key", r.key]
+    ["Key", r.key],
+    ["ยืนยันโดย", r.confirmedBy || "-"]
   ];
 
   const galleryHtml = r.pics.length > 0
@@ -986,7 +1021,7 @@ function confirmReceived(key){
     fetch(WEBHOOK_URL, {
       method: "POST",
       mode: "no-cors",
-      body: JSON.stringify({ key: key, action: "confirm_received" })
+      body: JSON.stringify({ key: key, action: "confirm_received", confirmedBy: currentUser || "ไม่ระบุชื่อ" })
     })
       .then(() => {
         setTimeout(() => {
@@ -1040,6 +1075,7 @@ function loadData(){
         date: parseSheetDate(r["วันที่"]),
         product: (r["Product"] || "-").trim(),
         productDetail: r["Product Detail"] || "-",
+        confirmedBy: r["ยืนยันโดย"] || "",
         type: (r["Transaction Catagory"] || "").trim(),
         category: r["Catagory"] || "-",
         desc: r["Description"] || "",
@@ -1357,7 +1393,10 @@ function render(rows, excludedNoDate){
           statusCell = "<span style='color:#8a8878'>รอครบกำหนด</span>";
         }
       } else if(confirmedKeys.has(r.key)){
-        statusCell = "<span class='confirmed-tag'>&#10003; " + confirmedLabel + "</span>";
+        const byName = currentUser || r.confirmedBy;
+        statusCell = "<span class='confirmed-tag'>&#10003; " + confirmedLabel + (byName ? " (" + byName + ")" : "") + "</span>";
+      } else if(r.confirmedBy){
+        statusCell = "<span class='confirmed-tag'>&#10003; โดย " + r.confirmedBy + "</span>";
       }
 
       return "<tr onclick=\"openDetail('" + r.key + "')\">" +
@@ -1515,7 +1554,28 @@ function buildReportElement_(){
   return wrap;
 }
 
-loadData();
+function attemptLogin(){
+  var name = document.getElementById("loginNameInput").value.trim();
+  var pin = document.getElementById("loginPinInput").value;
+  var errorEl = document.getElementById("loginError");
+
+  if(!name || pin !== DASHBOARD_PASSWORD){
+    errorEl.style.display = "block";
+    return;
+  }
+
+  errorEl.style.display = "none";
+  currentUser = name;
+  document.getElementById("loggedInAs").textContent = "👤 " + currentUser;
+  document.getElementById("loginOverlay").style.display = "none";
+  document.getElementById("mainWrap").style.display = "block";
+  loadData();
+}
+
+// กด Enter ในช่องรหัสผ่านแล้วล็อกอินได้เลย
+document.getElementById("loginPinInput").addEventListener("keydown", function(e){
+  if(e.key === "Enter") attemptLogin();
+});
 </script>
 </body>
 </html>
