@@ -1569,7 +1569,25 @@ function attemptLogin(){
   document.getElementById("loggedInAs").textContent = "👤 " + currentUser;
   document.getElementById("loginOverlay").style.display = "none";
   document.getElementById("mainWrap").style.display = "block";
+
+  setDefaultDateRangeToCurrentMonth_();
   loadData();
+}
+
+// ตั้งค่าเริ่มต้นให้แดชบอร์ดแสดงข้อมูลเฉพาะเดือนปัจจุบัน (ตั้งแต่วันที่ 1 ถึงวันนี้)
+function setDefaultDateRangeToCurrentMonth_(){
+  var now = new Date();
+  var firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+  var toStr = fmtDateInput_(now);
+  var fromStr = fmtDateInput_(firstDay);
+  document.getElementById("dateFrom").value = fromStr;
+  document.getElementById("dateTo").value = toStr;
+}
+function fmtDateInput_(d){
+  var y = d.getFullYear();
+  var m = String(d.getMonth()+1).padStart(2,"0");
+  var day = String(d.getDate()).padStart(2,"0");
+  return y + "-" + m + "-" + day;
 }
 
 // กด Enter ในช่องรหัสผ่านแล้วล็อกอินได้เลย
