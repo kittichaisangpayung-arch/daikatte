@@ -51,8 +51,9 @@
   .apply-filter-btn{border:none; background:var(--green); color:#fff; border-radius:7px; padding:9px 20px; font-size:13px; font-weight:600; cursor:pointer; font-family:inherit;}
   .apply-filter-btn:hover{background:#245c42;}
 
-  .search-summary-cards{display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-bottom:20px;}
-  @media (max-width:520px){.search-summary-cards{grid-template-columns:1fr;}}
+  .search-summary-cards{display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:20px;}
+  @media (max-width:720px){.search-summary-cards{grid-template-columns:repeat(2,1fr);}}
+  @media (max-width:420px){.search-summary-cards{grid-template-columns:1fr;}}
   .search-summary-card{background:var(--paper); border:1px solid var(--rule); border-radius:10px; padding:16px 18px;}
   .search-summary-label{font-size:12px; font-weight:600; margin-bottom:6px;}
   .search-summary-value{font-size:28px; font-weight:700; font-family:'Noto Serif Thai',serif;}
@@ -502,7 +503,7 @@ const CSV_URL = "https://docs.google.com/spreadsheets/d/" + SHEET_ID + "/gviz/tq
 const WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbxReWJ1H8xZrk7aEyDg4rF-JdIOVYS4MYkMszLG4dvk1TQWTvnETe02JHIopTNRs2o/exec";
 
 // รหัสผ่านร่วมของทีม (แก้ตรงนี้เพื่อเปลี่ยนรหัส) — เป็นแค่ตัวกันเบื้องต้น ไม่ใช่ระบบความปลอดภัยระดับสูง
-const DASHBOARD_PASSWORD = "1112";
+const DASHBOARD_PASSWORD = "1234";
 let currentUser = null;
 
 const BIZ_COLORS = { Donki: "#B98A2E", SweetHome: "#3E5C78" };
@@ -926,7 +927,8 @@ function renderSearchResults_(){
   document.getElementById("searchSummary").innerHTML =
     "<div class='search-summary-card'><div class='search-summary-label' style='color:var(--green)'>รายรับ</div><div class='search-summary-value'>" + thb(stats.income) + "</div></div>" +
     "<div class='search-summary-card'><div class='search-summary-label' style='color:var(--red)'>รายจ่าย</div><div class='search-summary-value'>" + thb(stats.expense) + "</div></div>" +
-    "<div class='search-summary-card'><div class='search-summary-label' style='color:var(--blue)'>สุทธิ</div><div class='search-summary-value' style='color:" + (stats.net >= 0 ? "var(--green)" : "var(--red)") + "'>" + (stats.net < 0 ? "-" : "") + thb(Math.abs(stats.net)) + "</div></div>";
+    "<div class='search-summary-card'><div class='search-summary-label' style='color:var(--blue)'>สุทธิ</div><div class='search-summary-value' style='color:" + (stats.net >= 0 ? "var(--green)" : "var(--red)") + "'>" + (stats.net < 0 ? "-" : "") + thb(Math.abs(stats.net)) + "</div></div>" +
+    "<div class='search-summary-card'><div class='search-summary-label' style='color:var(--gold)'>VAT ต้องนำส่ง</div><div class='search-summary-value' style='color:" + (stats.vatTotal >= 0 ? "var(--gold)" : "var(--green)") + "'>" + (stats.vatTotal < 0 ? "-" : "") + thb(Math.abs(stats.vatTotal)) + "</div><div style='font-size:11px; color:#8a8878; margin-top:4px;'>ขาย " + thb(stats.vatOnIncome) + " − ซื้อ " + thb(stats.vatOnExpense) + "</div></div>";
 
   if(lastSearchResults.length === 0){
     tbody.innerHTML = "";
@@ -939,7 +941,7 @@ function renderSearchResults_(){
   tbody.innerHTML = paged.map(r => {
     const cls = r.type === "รายได้" ? "income" : "expense";
     const sign = r.type === "รายจ่าย" ? "-" : "+";
-    return "<tr>" +
+    return "<tr onclick=\"openDetail('" + r.key + "')\">" +
       "<td>" + r.dateRaw + "</td>" +
       "<td>" + r.product + "</td>" +
       "<td style='color:#6b6a63'>" + r.productDetail + "</td>" +
