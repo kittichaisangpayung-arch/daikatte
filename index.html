@@ -278,6 +278,32 @@
       </div>
     </div>
 
+    <div class="table-box" id="reimburseBox" style="margin-bottom:24px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:10px;">
+        <div class="chart-title" style="margin-bottom:0;">สรุปยอดคืนเงินตามคน (เครดิตค้างจ่าย)</div>
+        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+          <span class="filter-label">ช่วงวันที่</span>
+          <input type="date" class="date-input" id="reimburseDateFrom">
+          <span style="color:#8a8878">ถึง</span>
+          <input type="date" class="date-input" id="reimburseDateTo">
+          <button class="clear-btn" onclick="clearReimburseDateFilter_()">ล้าง</button>
+        </div>
+      </div>
+      <div style="overflow-x:auto;">
+        <table>
+          <thead>
+            <tr>
+              <th>ผู้รับผิดชอบ</th><th style="text-align:right">จำนวนรายการ</th>
+              <th style="text-align:right">ยอดเงินรวม</th><th style="text-align:right">VAT รวม</th>
+              <th style="text-align:right">ยอดคืนรวม</th><th></th>
+            </tr>
+          </thead>
+          <tbody id="reimburseBody"></tbody>
+        </table>
+      </div>
+      <div class="empty-note" id="reimburseEmptyNote" style="display:none;">ไม่มีเครดิตค้างจ่ายที่ต้องคืนเงินตอนนี้</div>
+    </div>
+
     <div class="table-box" id="searchResultsBox" style="display:none;">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:8px;">
         <div class="chart-title" style="margin-bottom:0;">ผลการค้นหา</div>
@@ -296,6 +322,14 @@
         </table>
       </div>
       <div class="empty-note" id="searchEmptyNote" style="display:none;">ไม่พบรายการที่ตรงกับตัวกรอง</div>
+      <div class="pagination-bar" id="searchPaginationBar">
+        <div class="pagination-info" id="searchPaginationInfo"></div>
+        <div class="pagination-controls">
+          <button class="page-btn" id="searchPrevBtn" onclick="changeSearchPage(-1)">‹ ก่อนหน้า</button>
+          <span class="pagination-info" id="searchPageIndicator"></span>
+          <button class="page-btn" id="searchNextBtn" onclick="changeSearchPage(1)">ถัดไป ›</button>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -503,7 +537,7 @@ const CSV_URL = "https://docs.google.com/spreadsheets/d/" + SHEET_ID + "/gviz/tq
 const WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbxReWJ1H8xZrk7aEyDg4rF-JdIOVYS4MYkMszLG4dvk1TQWTvnETe02JHIopTNRs2o/exec";
 
 // รหัสผ่านร่วมของทีม (แก้ตรงนี้เพื่อเปลี่ยนรหัส) — เป็นแค่ตัวกันเบื้องต้น ไม่ใช่ระบบความปลอดภัยระดับสูง
-const DASHBOARD_PASSWORD = "1234";
+const DASHBOARD_PASSWORD = "1112";
 let currentUser = null;
 
 const BIZ_COLORS = { Donki: "#B98A2E", SweetHome: "#3E5C78" };
@@ -752,6 +786,7 @@ function showPage(name){
   document.getElementById("analysisPage").style.display = name === "analysis" ? "block" : "none";
   document.querySelectorAll("#pageNav .page-nav-btn").forEach(b => b.classList.toggle("active", b.dataset.page === name));
   if(name === "analysis") renderAnalysisPage_();
+  if(name === "filter") renderReimbursementSummary_();
   window.scrollTo(0, 0);
 }
 
@@ -933,9 +968,21 @@ function renderSearchResults_(){
   if(lastSearchResults.length === 0){
     tbody.innerHTML = "";
     emptyNote.style.display = "block";
+    document.getElementById("searchPaginationBar").style.display = "none";
     return;
   }
   emptyNote.style.display = "none";
+
+  const totalPages = Math.max(1, Math.ceil(lastSearchResults.length / searchPageSize));
+  if(searchPage > totalPages) searchPage = totalPages;
+  if(searchPage < 1) searchPage = 1;
+
+  document.getElementById("searchPaginationBar").style.display = "flex";
+  document.getElementById("searchPaginationInfo").textContent =
+    "แสดง " + ((searchPage - 1) * searchPageSize + 1) + "–" + Math.min(searchPage * searchPageSize, lastSearchResults.length) + " จาก " + lastSearchResults.length + " รายการ";
+  document.getElementById("searchPageIndicator").textContent = "หน้า " + searchPage + " / " + totalPages;
+  document.getElementById("searchPrevBtn").disabled = searchPage <= 1;
+  document.getElementById("searchNextBtn").disabled = searchPage >= totalPages;
 
   const paged = lastSearchResults.slice((searchPage - 1) * searchPageSize, searchPage * searchPageSize);
   tbody.innerHTML = paged.map(r => {
@@ -954,6 +1001,12 @@ function renderSearchResults_(){
       "<td>" + r.owner + "</td>" +
       "</tr>";
   }).join("");
+}
+
+function changeSearchPage(delta){
+  const totalPages = Math.max(1, Math.ceil(lastSearchResults.length / searchPageSize));
+  searchPage = Math.min(Math.max(1, searchPage + delta), totalPages);
+  renderSearchResults_();
 }
 
 function clearSearchFilters_(){
@@ -1000,6 +1053,102 @@ function clearFilters(){
   document.querySelectorAll("#methodTabs .tab-btn").forEach(b => b.classList.remove("active"));
   document.querySelector('#methodTabs .tab-btn[data-method="all"]').classList.add("active");
   applyFiltersAndRender();
+}
+
+function renderReimbursementSummary_(){
+  const tbody = document.getElementById("reimburseBody");
+  const emptyNote = document.getElementById("reimburseEmptyNote");
+  if(!tbody) return;
+
+  const payable = getFilteredReimburseRows_();
+
+  if(payable.length === 0){
+    tbody.innerHTML = "";
+    emptyNote.style.display = "block";
+    return;
+  }
+  emptyNote.style.display = "none";
+
+  const byOwner = {};
+  payable.forEach(r => {
+    const owner = r.owner || "(ไม่ระบุชื่อ)";
+    if(!byOwner[owner]) byOwner[owner] = { count:0, amount:0, vat:0 };
+    byOwner[owner].count += 1;
+    byOwner[owner].amount += r.amount;
+    byOwner[owner].vat += (r.vat || 0);
+  });
+
+  const owners = Object.keys(byOwner).sort((a,b) => (byOwner[b].amount+byOwner[b].vat) - (byOwner[a].amount+byOwner[a].vat));
+
+  tbody.innerHTML = owners.map(owner => {
+    const s = byOwner[owner];
+    const total = s.amount + s.vat;
+    return "<tr>" +
+      "<td style='font-weight:600'>" + owner + "</td>" +
+      "<td style='text-align:right'>" + s.count + "</td>" +
+      "<td style='text-align:right'>" + thb(s.amount) + "</td>" +
+      "<td style='text-align:right; color:var(--gold)'>" + thb(s.vat) + "</td>" +
+      "<td style='text-align:right; font-weight:700; color:var(--red)'>" + thb(total) + "</td>" +
+      "<td><button class='confirm-btn' onclick=\"confirmAllForOwner('" + owner.replace(/'/g,"\\'") + "')\">คืนเงินแล้วทั้งหมด</button></td>" +
+      "</tr>";
+  }).join("");
+}
+
+function getFilteredReimburseRows_(){
+  const fromVal = document.getElementById("reimburseDateFrom").value;
+  const toVal = document.getElementById("reimburseDateTo").value;
+  const from = fromVal ? parseDateInputLocal_(fromVal) : null;
+  const to = toVal ? parseDateInputLocal_(toVal) : null;
+  if(to) to.setHours(23,59,59,999);
+
+  return allRows.filter(r => {
+    if(r.method !== "เครดิต" || r.type !== "รายจ่าย") return false;
+    if(from && (!r.date || r.date < from)) return false;
+    if(to && (!r.date || r.date > to)) return false;
+    return true;
+  });
+}
+
+function clearReimburseDateFilter_(){
+  document.getElementById("reimburseDateFrom").value = "";
+  document.getElementById("reimburseDateTo").value = "";
+  renderReimbursementSummary_();
+}
+
+document.getElementById("reimburseDateFrom").addEventListener("change", renderReimbursementSummary_);
+document.getElementById("reimburseDateTo").addEventListener("change", renderReimbursementSummary_);
+
+function confirmAllForOwner(owner){
+  const matching = getFilteredReimburseRows_().filter(r => (r.owner || "(ไม่ระบุชื่อ)") === owner);
+  if(matching.length === 0) return;
+
+  const total = matching.reduce((s,r) => s + r.amount + (r.vat||0), 0);
+  const ok = confirm("ยืนยันว่าคืนเงินให้ " + owner + " ครบทั้ง " + matching.length + " รายการแล้วใช่ไหม?\nยอดรวม " + thb(total) + " บาท");
+  if(!ok) return;
+
+  matching.forEach(r => {
+    r.method = "เงินสด";
+    confirmedKeys.add(r.key);
+    if(WEBHOOK_URL){
+      fetch(WEBHOOK_URL, {
+        method: "POST",
+        mode: "no-cors",
+        body: JSON.stringify({ key: r.key, action: "confirm_received", confirmedBy: currentUser || "ไม่ระบุชื่อ" })
+      });
+    }
+  });
+
+  renderReimbursementSummary_();
+  applyFiltersAndRender();
+
+  const note = document.getElementById("syncNote");
+  if(note){
+    note.style.display = "block";
+    note.style.background = "var(--green-l)";
+    note.style.color = "var(--green)";
+    note.style.borderColor = "var(--green)";
+    note.textContent = "ส่งคำขอคืนเงินให้ " + owner + " ทั้ง " + matching.length + " รายการแล้ว (ลองรีเฟรชข้อมูลอีกครั้งเพื่อยืนยันว่า Sheet อัปเดตครบ)";
+  }
 }
 
 function confirmReceived(key){
@@ -1098,6 +1247,7 @@ function loadData(){
       })).filter(r => r.amount > 0 && (r.type === "รายได้" || r.type === "รายจ่าย"));
       populateSearchDropdowns_();
       applyFiltersAndRender();
+      renderReimbursementSummary_();
     })
     .catch(e => {
       const box = document.getElementById("errorBox");
