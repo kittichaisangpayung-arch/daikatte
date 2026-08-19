@@ -228,6 +228,15 @@
       </div>
 
       <div class="filter-section">
+        <div class="filter-section-title">Vat Check</div>
+        <div class="tabs" id="f_vatCheckTabs">
+          <button class="tab-btn active" data-vatcheck="all">ทั้งหมด</button>
+          <button class="tab-btn" data-vatcheck="true">มี VAT (TRUE)</button>
+          <button class="tab-btn" data-vatcheck="false">ไม่มี VAT (FALSE)</button>
+        </div>
+      </div>
+
+      <div class="filter-section">
         <div class="filter-section-title">ช่วงวันที่ (ตามวันที่ทำรายการ)</div>
         <div style="display:flex; align-items:center; gap:8px;">
           <input type="date" class="date-input" id="f_dateFrom">
@@ -274,7 +283,10 @@
 
       <div class="filter-page-actions">
         <button class="clear-btn" onclick="clearSearchFilters_()">ล้างตัวกรองทั้งหมด</button>
-        <button class="apply-filter-btn" onclick="runSearch_()">🔍 ค้นหา</button>
+        <div style="display:flex; gap:10px;">
+          <button class="clear-btn" onclick="exportRawExcel_()">📊 Export Excel</button>
+          <button class="apply-filter-btn" onclick="runSearch_()">🔍 ค้นหา</button>
+        </div>
       </div>
     </div>
 
@@ -527,6 +539,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
 const SHEET_ID = "1ZO1EV2SSWl4RaxckqieZ7vFX_3k2Ef5qTHon0Ftt4EM";
 const GID = "1415721860";
@@ -564,6 +577,7 @@ let currentPageView = "dashboard";
 let f_activeBiz = "all";
 let f_activeMethod = "all";
 let f_activeCategory = "all";
+let f_activeVatCheck = "all";
 let f_activeBranch = "all";
 let f_activeOwner = "all";
 let searchPage = 1;
@@ -593,6 +607,7 @@ function parseSheetDate(v){
 // Parses "เงินจะเข้าวันที่" which can be like "8 กันยายน 2026", "8/10/2026" (M/D/YYYY), or "10/Jul/26" (D/Mon/YY)
 function parseFlexibleDate(v){
   if(!v || v === "-") return null;
+  if(v instanceof Date) return isValidRealDate_(v) ? v : null;
   const str = String(v).trim();
   const thaiMatch = str.match(/^(\d{1,2})\s+([\u0E00-\u0E7F]+)\s+(\d{4})$/);
   if(thaiMatch){
@@ -614,9 +629,16 @@ function parseFlexibleDate(v){
     const month = parseInt(slashMatch[1],10) - 1;
     const day = parseInt(slashMatch[2],10);
     const year = parseInt(slashMatch[3],10);
-    return new Date(year, month, day);
+    const d = new Date(year, month, day);
+    return isValidRealDate_(d) ? d : null;
   }
   return null;
+}
+
+// บางแถวใน Sheet คำนวณ "เงินจะเข้าวันที่" ผิดพลาดจากสูตร กลายเป็นวันที่ 1/1/1970 (epoch)
+// แทนที่จะว่างเปล่า ถือว่าไม่ใช่วันครบกำหนดจริง ให้ตัดทิ้งเป็น "ไม่มีวันที่" แทน
+function isValidRealDate_(d){
+  return d.getFullYear() >= 2000;
 }
 // input[type=date] ให้ค่าเป็น "YYYY-MM-DD" — new Date(str) ตีความเป็น UTC เที่ยงคืน
 // ซึ่งในโซนเวลาไทย (+7) จะกลายเป็น 07:00 น. ทำให้รายการที่บันทึกไว้เป็นเที่ยงคืนโซนไทย
@@ -651,7 +673,7 @@ function openDetail(key){
     ["ประเภท", r.type],
     ["หมวดหมู่", r.category],
     ["รายละเอียด", r.desc || "-"],
-    ["จำนวนเงิน", sign + thb(r.amount)],
+    ["จำนวนเงิน", sign + thb(r.amount) + (r.discount ? " (ในบิล " + thb(r.billAmount) + " + ส่วนต่างนอกบิล " + thb(r.discount) + ")" : "")],
     ["VAT", r.vat ? thb(r.vat) : "-"],
     ["การรับเงิน", r.method],
     ["ระยะเครดิต", r.term !== "-" ? r.term + " วัน" : "-"],
@@ -764,6 +786,13 @@ document.getElementById("f_methodTabs").addEventListener("click", (e) => {
     document.querySelectorAll("#f_methodTabs .tab-btn").forEach(b => b.classList.remove("active"));
     e.target.classList.add("active");
     f_activeMethod = e.target.dataset.method;
+  }
+});
+document.getElementById("f_vatCheckTabs").addEventListener("click", (e) => {
+  if(e.target.classList.contains("tab-btn")){
+    document.querySelectorAll("#f_vatCheckTabs .tab-btn").forEach(b => b.classList.remove("active"));
+    e.target.classList.add("active");
+    f_activeVatCheck = e.target.dataset.vatcheck;
   }
 });
 document.getElementById("f_categorySelect").addEventListener("change", (e) => { f_activeCategory = e.target.value; });
@@ -933,6 +962,7 @@ function runSearch_(){
     if(f_activeBiz !== "all" && r.product !== f_activeBiz) return false;
     if(f_activeMethod !== "all" && r.method !== f_activeMethod) return false;
     if(f_activeCategory !== "all" && r.category !== f_activeCategory) return false;
+    if(f_activeVatCheck !== "all" && r.vatCheck !== (f_activeVatCheck === "true")) return false;
     if(f_activeBranch !== "all" && r.branch !== f_activeBranch) return false;
     if(f_activeOwner !== "all" && r.owner !== f_activeOwner) return false;
     if(Number.isFinite(minAmount) && r.amount < minAmount) return false;
@@ -949,6 +979,44 @@ function runSearch_(){
   lastSearchResults = results;
   searchPage = 1;
   renderSearchResults_();
+}
+
+function exportRawExcel_(){
+  const rows = lastSearchResults.length > 0 ? lastSearchResults : allRows;
+
+  if(rows.length === 0){
+    alert("ไม่มีข้อมูลให้ export ครับ");
+    return;
+  }
+
+  const data = rows.map(r => ({
+    "Key": r.key,
+    "วันที่": r.dateRaw,
+    "สินค้า": r.product,
+    "รายละเอียดสินค้า": r.productDetail,
+    "ประเภท": r.type,
+    "หมวดหมู่": r.category,
+    "รายละเอียด": r.desc,
+    "ยอดในบิล": r.billAmount,
+    "ส่วนต่างนอกบิล": r.discount,
+    "ยอดรวมจริง": r.amount,
+    "Vat Check": r.vatCheck ? "TRUE" : "FALSE",
+    "VAT": r.vat,
+    "การรับเงิน": r.method,
+    "ระยะเครดิต (วัน)": r.term !== "-" ? r.term : "",
+    "สาขา": r.branch,
+    "ผู้รับผิดชอบ": r.owner,
+    "วันที่บันทึก (Billing)": r.billing,
+    "เงินจะเข้าวันที่": r.incomingRaw,
+    "ยืนยันโดย": r.confirmedBy
+  }));
+
+  const ws = XLSX.utils.json_to_sheet(data);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "ข้อมูลดิบ");
+
+  const timestamp = new Date().toISOString().slice(0,10);
+  XLSX.writeFile(wb, "รายรับรายจ่าย_" + timestamp + ".xlsx");
 }
 
 function renderSearchResults_(){
@@ -1018,12 +1086,15 @@ function clearSearchFilters_(){
   f_activeBiz = "all";
   f_activeMethod = "all";
   f_activeCategory = "all";
+  f_activeVatCheck = "all";
   f_activeBranch = "all";
   f_activeOwner = "all";
   document.querySelectorAll("#f_bizTabs .tab-btn").forEach(b => b.classList.remove("active"));
   document.querySelector('#f_bizTabs .tab-btn[data-biz="all"]').classList.add("active");
   document.querySelectorAll("#f_methodTabs .tab-btn").forEach(b => b.classList.remove("active"));
   document.querySelector('#f_methodTabs .tab-btn[data-method="all"]').classList.add("active");
+  document.querySelectorAll("#f_vatCheckTabs .tab-btn").forEach(b => b.classList.remove("active"));
+  document.querySelector('#f_vatCheckTabs .tab-btn[data-vatcheck="all"]').classList.add("active");
   document.getElementById("f_categorySelect").value = "all";
   document.getElementById("f_branchSelect").value = "all";
   document.getElementById("f_ownerSelect").value = "all";
@@ -1230,8 +1301,12 @@ function loadData(){
         type: (r["Transaction Catagory"] || "").trim(),
         category: r["Catagory"] || "-",
         desc: r["Description"] || "",
-        amount: parseMoney(r["Amount"]),
+        amount: parseMoney(r["Amount"]) + parseMoney(r["discount"]),
+        billAmount: parseMoney(r["Amount"]),
+        discount: parseMoney(r["discount"]),
         vat: parseMoney(r["VAT"]),
+        vatCheck: String(r["Vat Check"] || "").trim().toUpperCase() === "TRUE",
+        vatCheck: String(r["Vat Check"] || "").trim().toUpperCase() === "TRUE",
         method: (r["Transaction Type"] || "-").trim(),
         term: r["Term Credit"] || "-",
         branch: r["Branch"] || "-",
