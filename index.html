@@ -193,6 +193,7 @@
     <button class="page-nav-btn active" data-page="dashboard" onclick="showPage('dashboard')">📊 แดชบอร์ด</button>
     <button class="page-nav-btn" data-page="filter" onclick="showPage('filter')">🔍 ตัวกรองข้อมูล</button>
     <button class="page-nav-btn" data-page="analysis" onclick="showPage('analysis')">📈 วิเคราะห์เชิงลึก</button>
+    <button class="page-nav-btn" data-page="monthly" onclick="showPage('monthly')">🗓️ รายงานประจำเดือน</button>
   </div>
 
   <div class="error-box" id="errorBox">
@@ -389,6 +390,81 @@
 
   </div>
 
+  <!-- ===================== หน้ารายงานประจำเดือน (สรุปบัญชีแบบละเอียด) ===================== -->
+  <div id="monthlyReportPage" style="display:none;">
+
+    <div class="filter-bar">
+      <div class="filter-group">
+        <span class="filter-label">เลือกเดือน</span>
+        <input type="month" class="date-input" id="reportMonthInput">
+      </div>
+      <button class="refresh-btn" onclick="exportMonthlyReportPDF_()">📄 Export PDF รายงานนี้</button>
+    </div>
+
+    <div class="cards" id="reportKpiCards"></div>
+
+    <div class="biz-row" id="reportBizRow"></div>
+
+    <div class="charts">
+      <div class="chart-box">
+        <div class="chart-title">สรุปกำไรขาดทุน (P&amp;L) — รายรับตามหมวดหมู่</div>
+        <div style="position:relative;height:200px; margin-bottom:14px;">
+          <canvas id="reportIncomeCatChart" role="img" aria-label="กราฟวงกลมสัดส่วนรายรับตามหมวดหมู่"></canvas>
+        </div>
+        <div style="overflow-x:auto;">
+          <table>
+            <thead><tr><th>หมวดหมู่</th><th style="text-align:right">ยอดรวม</th><th style="text-align:right">สัดส่วน</th></tr></thead>
+            <tbody id="reportIncomeCatBody"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="chart-box">
+        <div class="chart-title">สรุปกำไรขาดทุน (P&amp;L) — รายจ่ายตามหมวดหมู่</div>
+        <div style="position:relative;height:200px; margin-bottom:14px;">
+          <canvas id="reportExpenseCatChart" role="img" aria-label="กราฟวงกลมสัดส่วนรายจ่ายตามหมวดหมู่"></canvas>
+        </div>
+        <div style="overflow-x:auto;">
+          <table>
+            <thead><tr><th>หมวดหมู่</th><th style="text-align:right">ยอดรวม</th><th style="text-align:right">สัดส่วน</th></tr></thead>
+            <tbody id="reportExpenseCatBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="chart-box" style="margin-bottom:24px;">
+      <div class="chart-title">แยกตามสาขา</div>
+      <div style="position:relative;height:220px; margin-bottom:14px;">
+        <canvas id="reportBranchChart" role="img" aria-label="กราฟแท่งรายรับรายจ่ายแยกตามสาขา"></canvas>
+      </div>
+      <div style="overflow-x:auto;">
+        <table>
+          <thead><tr><th>สาขา</th><th style="text-align:right">รายรับ</th><th style="text-align:right">รายจ่าย</th><th style="text-align:right">กำไรสุทธิ</th></tr></thead>
+          <tbody id="reportBranchBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="chart-box" style="margin-bottom:24px;">
+      <div class="chart-title">เทียบกับเดือนก่อนหน้า</div>
+      <div style="position:relative;height:220px; margin-bottom:14px;">
+        <canvas id="reportCompareChart" role="img" aria-label="กราฟแท่งเทียบรายรับ รายจ่าย กำไรสุทธิ กับเดือนก่อนหน้า"></canvas>
+      </div>
+      <div style="overflow-x:auto;">
+        <table>
+          <thead><tr><th></th><th style="text-align:right" id="reportPrevMonthLabel">เดือนก่อน</th><th style="text-align:right" id="reportCurMonthLabel">เดือนนี้</th><th style="text-align:right">เปลี่ยนแปลง</th></tr></thead>
+          <tbody id="reportCompareBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="chart-box">
+      <div class="chart-title">เครดิตค้างอยู่ตอนนี้ (จากรายการที่บันทึกในเดือนนี้)</div>
+      <div class="cards" id="reportCreditCards" style="margin-bottom:0;"></div>
+    </div>
+
+  </div>
+
   <!-- ===================== หน้าแดชบอร์ด (ข้อมูล/ตัวกรองแยกอิสระจากหน้าตัวกรอง) ===================== -->
   <div id="dashboardPage">
 
@@ -561,6 +637,7 @@ const THAI_MONTHS_SHORT = ["ม.ค.","ก.พ.","มี.ค.","เม.ย.","�
 let allRows = [];
 let branchChart, categoryChart, trendChart;
 let topIncomeChart, topExpenseChart, yoyChart;
+let reportIncomeCatChart, reportExpenseCatChart, reportBranchChart, reportCompareChart;
 let a_activeBiz = "all";
 let activeBiz = "all";
 let activeMethod = "all";
@@ -813,9 +890,11 @@ function showPage(name){
   document.getElementById("dashboardPage").style.display = name === "dashboard" ? "block" : "none";
   document.getElementById("filterPage").style.display = name === "filter" ? "block" : "none";
   document.getElementById("analysisPage").style.display = name === "analysis" ? "block" : "none";
+  document.getElementById("monthlyReportPage").style.display = name === "monthly" ? "block" : "none";
   document.querySelectorAll("#pageNav .page-nav-btn").forEach(b => b.classList.toggle("active", b.dataset.page === name));
   if(name === "analysis") renderAnalysisPage_();
   if(name === "filter") renderReimbursementSummary_();
+  if(name === "monthly") renderMonthlyReport_();
   window.scrollTo(0, 0);
 }
 
@@ -920,6 +999,190 @@ function forecastCardHtml_(label, f){
       (f.overdueCount > 0 ? " (รวม " + f.overdueCount + " รายการที่เลยกำหนดแล้ว)" : "") +
     "</div>" +
   "</div>";
+}
+
+// ===================== หน้ารายงานประจำเดือน (สรุปบัญชีแบบละเอียด) =====================
+(function initReportMonthInput_(){
+  const input = document.getElementById("reportMonthInput");
+  if(!input) return;
+  const now = new Date();
+  input.value = now.getFullYear() + "-" + String(now.getMonth()+1).padStart(2,"0");
+  input.addEventListener("change", renderMonthlyReport_);
+})();
+
+function rowsForMonth_(y, m){
+  return allRows.filter(r => r.date && r.date.getFullYear() === y && r.date.getMonth() === m);
+}
+
+function renderMonthlyReport_(){
+  const val = document.getElementById("reportMonthInput").value; // "YYYY-MM"
+  if(!val) return;
+  const [yStr, mStr] = val.split("-");
+  const y = parseInt(yStr,10), m = parseInt(mStr,10) - 1;
+
+  const prevDate = new Date(y, m - 1, 1);
+  const prevY = prevDate.getFullYear(), prevM = prevDate.getMonth();
+
+  const rows = rowsForMonth_(y, m);
+  const prevRows = rowsForMonth_(prevY, prevM);
+
+  const stats = calcStats(rows);
+  const prevStats = calcStats(prevRows);
+  const monthLabel = THAI_MONTHS[m] + " " + (y + 543);
+  const prevMonthLabel = THAI_MONTHS[prevM] + " " + (prevY + 543);
+
+  // ---- KPI cards ----
+  document.getElementById("reportKpiCards").innerHTML = [
+    ["รายรับรวม", thb(stats.income), "var(--green)"],
+    ["รายจ่ายรวม", thb(stats.expense), "var(--red)"],
+    ["กำไรสุทธิ", (stats.net<0?"-":"") + thb(Math.abs(stats.net)), stats.net>=0 ? "var(--green)" : "var(--red)"],
+    ["อัตรากำไร", stats.margin.toFixed(1) + "%", "var(--blue)"],
+    ["VAT ต้องนำส่ง", (stats.vatTotal>=0?"":"-") + thb(Math.abs(stats.vatTotal)), "var(--gold)"],
+    ["จำนวนรายการ", rows.length + " รายการ", "var(--ink)"]
+  ].map(([label,val,color]) =>
+    "<div class='card'><div class='card-label' style='color:" + color + "'>" + label + "</div><div class='card-value'>" + val + "</div></div>"
+  ).join("");
+
+  // ---- แยกตามธุรกิจ ----
+  const businesses = [...new Set(allRows.map(r => r.product))];
+  document.getElementById("reportBizRow").innerHTML = businesses.map(biz => {
+    const s = calcStats(rows.filter(r => r.product === biz));
+    const color = BIZ_COLORS[biz] || "#8a8878";
+    const marginColor = s.margin >= 0 ? "var(--green)" : "var(--red)";
+    return "<div class='biz-card' style='--accent:" + color + "'>" +
+      "<div class='biz-card-head'><span class='biz-name'>" + biz + "</span>" +
+      "<span class='biz-margin-badge' style='background:" + (s.margin>=0?"var(--green-l)":"var(--red-l)") + ";color:" + marginColor + "'>อัตรากำไร " + s.margin.toFixed(1) + "%</span></div>" +
+      "<div class='biz-stats'>" +
+        "<div><div class='biz-stat-label'>รายรับ</div><div class='biz-stat-value' style='color:var(--green)'>" + thb(s.income) + "</div></div>" +
+        "<div><div class='biz-stat-label'>รายจ่าย</div><div class='biz-stat-value' style='color:var(--red)'>" + thb(s.expense) + "</div></div>" +
+        "<div><div class='biz-stat-label'>กำไรสุทธิ</div><div class='biz-stat-value'>" + thb(s.net) + "</div></div>" +
+        "<div><div class='biz-stat-label'>VAT ต้องนำส่ง</div><div class='biz-stat-value' style='color:var(--gold)'>" + thb(s.vatTotal) + "</div></div>" +
+      "</div></div>";
+  }).join("");
+
+  // ---- P&L ตามหมวดหมู่ (ตาราง + กราฟ) ----
+  const catPalette = ["#2D6A4F","#B98A2E","#9A3B2E","#3E5C78","#7A5FA0","#C77B4F","#5A8F7B","#A8763E"];
+  const catTable = (type, tbodyId, chartCanvasId, chartVarSetter) => {
+    const byCat = {};
+    rows.filter(r => r.type === type).forEach(r => { byCat[r.category] = (byCat[r.category]||0) + r.amount; });
+    const total = Object.values(byCat).reduce((a,b)=>a+b,0);
+    const sorted = Object.entries(byCat).sort((a,b) => b[1]-a[1]);
+    document.getElementById(tbodyId).innerHTML = sorted.length === 0
+      ? "<tr><td colspan='3' style='text-align:center;color:#8a8878;'>ไม่มีข้อมูล</td></tr>"
+      : sorted.map(([cat,amt]) =>
+          "<tr><td>" + cat + "</td><td style='text-align:right'>" + thb(amt) + "</td><td style='text-align:right;color:#8a8878'>" + (total>0 ? (amt/total*100).toFixed(1) : "0.0") + "%</td></tr>"
+        ).join("") + "<tr><td style='font-weight:700'>รวม</td><td style='text-align:right;font-weight:700'>" + thb(total) + "</td><td style='text-align:right'>100%</td></tr>";
+
+    const existing = chartVarSetter();
+    if(existing) existing.destroy();
+    const newChart = new Chart(document.getElementById(chartCanvasId), {
+      type: "doughnut",
+      data: {
+        labels: sorted.map(d => d[0]),
+        datasets: [{ data: sorted.map(d => d[1]), backgroundColor: sorted.map((_,i) => catPalette[i % catPalette.length]) }]
+      },
+      options: {
+        responsive:true, maintainAspectRatio:false,
+        plugins:{ legend:{ position:"right", labels:{ boxWidth:10, font:{size:11} } },
+          tooltip:{ callbacks:{ label: ctx => ctx.label + ": " + thb(ctx.raw) } } }
+      }
+    });
+    return newChart;
+  };
+  reportIncomeCatChart = catTable("รายได้", "reportIncomeCatBody", "reportIncomeCatChart", () => reportIncomeCatChart);
+  reportExpenseCatChart = catTable("รายจ่าย", "reportExpenseCatBody", "reportExpenseCatChart", () => reportExpenseCatChart);
+
+  // ---- แยกตามสาขา ----
+  const byBranch = {};
+  rows.forEach(r => {
+    if(!byBranch[r.branch]) byBranch[r.branch] = {income:0, expense:0};
+    if(r.type === "รายได้") byBranch[r.branch].income += r.amount; else byBranch[r.branch].expense += r.amount;
+  });
+  const branchEntries = Object.entries(byBranch).sort((a,b) => (b[1].income-b[1].expense) - (a[1].income-a[1].expense));
+  document.getElementById("reportBranchBody").innerHTML = branchEntries.length === 0
+    ? "<tr><td colspan='4' style='text-align:center;color:#8a8878;'>ไม่มีข้อมูล</td></tr>"
+    : branchEntries.map(([branch,s]) => {
+        const net = s.income - s.expense;
+        return "<tr><td>" + branch + "</td><td style='text-align:right;color:var(--green)'>" + thb(s.income) + "</td><td style='text-align:right;color:var(--red)'>" + thb(s.expense) + "</td><td style='text-align:right;font-weight:700;color:" + (net>=0?"var(--green)":"var(--red)") + "'>" + thb(net) + "</td></tr>";
+      }).join("");
+
+  if(reportBranchChart) reportBranchChart.destroy();
+  reportBranchChart = new Chart(document.getElementById("reportBranchChart"), {
+    type: "bar",
+    data: {
+      labels: branchEntries.map(e => e[0]),
+      datasets: [
+        { label:"รายรับ", data: branchEntries.map(e => e[1].income), backgroundColor:"#2D6A4F", borderRadius:4 },
+        { label:"รายจ่าย", data: branchEntries.map(e => e[1].expense), backgroundColor:"#9A3B2E", borderRadius:4 }
+      ]
+    },
+    options: { responsive:true, maintainAspectRatio:false,
+      scales:{ y:{ ticks:{ callback:v=>(v/1000)+"k" } } },
+      plugins:{ legend:{ position:"top", labels:{boxWidth:10,font:{size:12}} }, tooltip:{ callbacks:{ label: ctx => ctx.dataset.label + ": " + thb(ctx.raw) } } } }
+  });
+
+  // ---- เทียบเดือนก่อนหน้า ----
+  document.getElementById("reportPrevMonthLabel").textContent = prevMonthLabel;
+  document.getElementById("reportCurMonthLabel").textContent = monthLabel;
+  const compareRow = (label, cur, prev, higherIsBetter) => {
+    const diff = cur - prev;
+    const pct = prev !== 0 ? (diff/Math.abs(prev)*100) : (cur !== 0 ? null : 0);
+    const good = higherIsBetter ? diff >= 0 : diff <= 0;
+    const color = diff === 0 ? "#8a8878" : (good ? "var(--green)" : "var(--red)");
+    const pctText = pct === null ? "ใหม่" : (pct>=0?"+":"") + pct.toFixed(1) + "%";
+    return "<tr><td style='font-weight:600'>" + label + "</td><td style='text-align:right'>" + thb(prev) + "</td><td style='text-align:right'>" + thb(cur) + "</td><td style='text-align:right;color:" + color + ";font-weight:600'>" + pctText + "</td></tr>";
+  };
+  document.getElementById("reportCompareBody").innerHTML =
+    compareRow("รายรับ", stats.income, prevStats.income, true) +
+    compareRow("รายจ่าย", stats.expense, prevStats.expense, false) +
+    compareRow("กำไรสุทธิ", stats.net, prevStats.net, true);
+
+  if(reportCompareChart) reportCompareChart.destroy();
+  reportCompareChart = new Chart(document.getElementById("reportCompareChart"), {
+    type: "bar",
+    data: {
+      labels: ["รายรับ", "รายจ่าย", "กำไรสุทธิ"],
+      datasets: [
+        { label: prevMonthLabel, data: [prevStats.income, prevStats.expense, prevStats.net], backgroundColor:"#C9C5B8", borderRadius:4 },
+        { label: monthLabel, data: [stats.income, stats.expense, stats.net], backgroundColor:"#B98A2E", borderRadius:4 }
+      ]
+    },
+    options: { responsive:true, maintainAspectRatio:false,
+      scales:{ y:{ ticks:{ callback:v=>(v/1000)+"k" } } },
+      plugins:{ legend:{ position:"top", labels:{boxWidth:10,font:{size:12}} }, tooltip:{ callbacks:{ label: ctx => ctx.dataset.label + ": " + thb(ctx.raw) } } } }
+  });
+
+  // ---- เครดิตค้างอยู่ตอนนี้ (จากรายการเดือนนี้) ----
+  const creditRows = rows.filter(r => r.method === "เครดิต");
+  const recv = creditRows.filter(r => r.type === "รายได้").reduce((s,r)=>s+r.amount,0);
+  const pay = creditRows.filter(r => r.type === "รายจ่าย").reduce((s,r)=>s+r.amount,0);
+  document.getElementById("reportCreditCards").innerHTML =
+    "<div class='card'><div class='card-label' style='color:var(--green)'>เครดิตค้างรับ</div><div class='card-value'>" + thb(recv) + "</div></div>" +
+    "<div class='card'><div class='card-label' style='color:var(--red)'>เครดิตค้างจ่าย</div><div class='card-value'>" + thb(pay) + "</div></div>";
+}
+
+async function exportMonthlyReportPDF_(){
+  const el = document.getElementById("monthlyReportPage");
+  const canvas = await html2canvas(el, { scale: 2, backgroundColor: "#F6F3EA" });
+  const { jsPDF } = window.jspdf;
+  const pdf = new jsPDF("p", "mm", "a4");
+  const pageWidth = 210, pageHeight = 297;
+  const imgWidth = pageWidth;
+  const imgHeight = (canvas.height * imgWidth) / canvas.width;
+  const imgData = canvas.toDataURL("image/png");
+
+  let heightLeft = imgHeight, position = 0;
+  pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
+  heightLeft -= pageHeight;
+  while(heightLeft > 0){
+    position = heightLeft - imgHeight;
+    pdf.addPage();
+    pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
+    heightLeft -= pageHeight;
+  }
+
+  const val = document.getElementById("reportMonthInput").value;
+  pdf.save("รายงานประจำเดือน_" + val + ".pdf");
 }
 
 function populateSearchDropdowns_(){
