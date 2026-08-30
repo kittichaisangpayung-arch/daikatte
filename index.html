@@ -214,8 +214,6 @@
         <div class="filter-section-title">ธุรกิจ</div>
         <div class="tabs" id="f_bizTabs">
           <button class="tab-btn active" data-biz="all">ทั้งหมด</button>
-          <button class="tab-btn" data-biz="Donki">Donki</button>
-          <button class="tab-btn" data-biz="SweetHome">SweetHome</button>
         </div>
       </div>
 
@@ -302,6 +300,9 @@
           <button class="clear-btn" onclick="clearReimburseDateFilter_()">ล้าง</button>
         </div>
       </div>
+      <div style="position:relative;height:200px; margin-bottom:16px;" id="reimburseChartWrap">
+        <canvas id="reimburseChart" role="img" aria-label="กราฟแท่งแนวนอนยอดคืนเงินรวมแยกตามคน"></canvas>
+      </div>
       <div style="overflow-x:auto;">
         <table>
           <thead>
@@ -317,12 +318,55 @@
       <div class="empty-note" id="reimburseEmptyNote" style="display:none;">ไม่มีเครดิตค้างจ่ายที่ต้องคืนเงินตอนนี้</div>
     </div>
 
+    <div class="table-box" id="receiveBox" style="margin-bottom:24px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:10px;">
+        <div class="chart-title" style="margin-bottom:0;">สรุปยอดค้างรับตามคน (เครดิตค้างรับ)</div>
+        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+          <span class="filter-label">ช่วงวันที่</span>
+          <input type="date" class="date-input" id="receiveDateFrom">
+          <span style="color:#8a8878">ถึง</span>
+          <input type="date" class="date-input" id="receiveDateTo">
+          <button class="clear-btn" onclick="clearReceiveDateFilter_()">ล้าง</button>
+        </div>
+      </div>
+      <div style="position:relative;height:200px; margin-bottom:16px;" id="receiveChartWrap">
+        <canvas id="receiveChart" role="img" aria-label="กราฟแท่งแนวนอนยอดค้างรับรวมแยกตามคน"></canvas>
+      </div>
+      <div style="overflow-x:auto;">
+        <table>
+          <thead>
+            <tr>
+              <th>ผู้รับผิดชอบ</th><th style="text-align:right">จำนวนรายการ</th>
+              <th style="text-align:right">ยอดเงินรวม</th><th style="text-align:right">VAT รวม</th>
+              <th style="text-align:right">ยอดรับรวม</th><th></th>
+            </tr>
+          </thead>
+          <tbody id="receiveBody"></tbody>
+        </table>
+      </div>
+      <div class="empty-note" id="receiveEmptyNote" style="display:none;">ไม่มีเครดิตค้างรับตอนนี้</div>
+    </div>
+
     <div class="table-box" id="searchResultsBox" style="display:none;">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:8px;">
         <div class="chart-title" style="margin-bottom:0;">ผลการค้นหา</div>
         <div id="searchCountLabel" style="font-size:12px; color:#8a8878;"></div>
       </div>
       <div class="search-summary-cards" id="searchSummary"></div>
+      <div class="charts">
+        <div class="chart-box" style="padding:14px;">
+          <div class="chart-title" style="font-size:12px;">รายรับ vs รายจ่าย</div>
+          <div style="position:relative;height:180px;">
+            <canvas id="searchTypeChart" role="img" aria-label="กราฟวงกลมสัดส่วนรายรับกับรายจ่ายในผลค้นหา"></canvas>
+          </div>
+        </div>
+        <div class="chart-box" style="padding:14px;">
+          <div class="chart-title" style="font-size:12px;">แยกตามหมวดหมู่</div>
+          <div style="position:relative;height:180px;">
+            <canvas id="searchCatChart" role="img" aria-label="กราฟแท่งแนวนอนยอดรวมแยกตามหมวดหมู่ในผลค้นหา"></canvas>
+          </div>
+        </div>
+      </div>
       <div style="overflow-x:auto;">
         <table>
           <thead>
@@ -354,8 +398,6 @@
         <span class="filter-label">ธุรกิจ</span>
         <div class="tabs" id="a_bizTabs">
           <button class="tab-btn active" data-biz="all">ทั้งหมด</button>
-          <button class="tab-btn" data-biz="Donki">Donki</button>
-          <button class="tab-btn" data-biz="SweetHome">SweetHome</button>
         </div>
       </div>
     </div>
@@ -398,7 +440,7 @@
         <span class="filter-label">เลือกเดือน</span>
         <input type="month" class="date-input" id="reportMonthInput">
       </div>
-      <button class="refresh-btn" onclick="exportMonthlyReportPDF_()">📄 Export PDF รายงานนี้</button>
+      <button class="refresh-btn" id="exportMonthlyPdfBtn" onclick="exportMonthlyReportPDF_()">📄 Export PDF รายงานนี้</button>
     </div>
 
     <div class="cards" id="reportKpiCards"></div>
@@ -473,8 +515,6 @@
       <span class="filter-label">ธุรกิจ</span>
       <div class="tabs" id="bizTabs">
         <button class="tab-btn active" data-biz="all">ทั้งหมด</button>
-        <button class="tab-btn" data-biz="Donki">Donki</button>
-        <button class="tab-btn" data-biz="SweetHome">SweetHome</button>
       </div>
     </div>
     <div class="filter-group">
@@ -629,7 +669,17 @@ const WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbxReWJ1H8xZrk7aEyDg
 const DASHBOARD_PASSWORD = "1112";
 let currentUser = null;
 
-const BIZ_COLORS = { Donki: "#B98A2E", SweetHome: "#3E5C78" };
+// สีของธุรกิจ: กำหนดตายตัวไว้บางชื่อ (คงเดิมไว้เพื่อความต่อเนื่อง) ที่เหลือไล่จากพาเลตอัตโนมัติ
+// ทำให้เพิ่มธุรกิจใหม่กี่ตัวก็ได้โดยไม่ต้องแก้โค้ด
+const BIZ_COLORS_FIXED = { Donki: "#B98A2E", SweetHome: "#3E5C78" };
+const BIZ_COLOR_PALETTE = ["#B98A2E", "#3E5C78", "#2D6A4F", "#9A3B2E", "#7A5FA0", "#C77B4F", "#5A8F7B", "#A8763E"];
+function getBizColor_(bizName){
+  if(BIZ_COLORS_FIXED[bizName]) return BIZ_COLORS_FIXED[bizName];
+  const businesses = [...new Set(allRows.map(r => r.product))].sort();
+  const idx = businesses.indexOf(bizName);
+  return idx >= 0 ? BIZ_COLOR_PALETTE[idx % BIZ_COLOR_PALETTE.length] : "#8a8878";
+}
+
 const MONTHS = {Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
 const THAI_MONTHS = ["มกราคม","กุมภาพันธ์","มีนาคม","เมษายน","พฤษภาคม","มิถุนายน","กรกฎาคม","สิงหาคม","กันยายน","ตุลาคม","พฤศจิกายน","ธันวาคม"];
 const THAI_MONTHS_SHORT = ["ม.ค.","ก.พ.","มี.ค.","เม.ย.","พ.ค.","มิ.ย.","ก.ค.","ส.ค.","ก.ย.","ต.ค.","พ.ย.","ธ.ค."];
@@ -638,6 +688,7 @@ let allRows = [];
 let branchChart, categoryChart, trendChart;
 let topIncomeChart, topExpenseChart, yoyChart;
 let reportIncomeCatChart, reportExpenseCatChart, reportBranchChart, reportCompareChart;
+let reimburseChart, searchTypeChart, searchCatChart;
 let a_activeBiz = "all";
 let activeBiz = "all";
 let activeMethod = "all";
@@ -1047,7 +1098,7 @@ function renderMonthlyReport_(){
   const businesses = [...new Set(allRows.map(r => r.product))];
   document.getElementById("reportBizRow").innerHTML = businesses.map(biz => {
     const s = calcStats(rows.filter(r => r.product === biz));
-    const color = BIZ_COLORS[biz] || "#8a8878";
+    const color = getBizColor_(biz);
     const marginColor = s.margin >= 0 ? "var(--green)" : "var(--red)";
     return "<div class='biz-card' style='--accent:" + color + "'>" +
       "<div class='biz-card-head'><span class='biz-name'>" + biz + "</span>" +
@@ -1162,27 +1213,87 @@ function renderMonthlyReport_(){
 }
 
 async function exportMonthlyReportPDF_(){
-  const el = document.getElementById("monthlyReportPage");
-  const canvas = await html2canvas(el, { scale: 2, backgroundColor: "#F6F3EA" });
-  const { jsPDF } = window.jspdf;
-  const pdf = new jsPDF("p", "mm", "a4");
-  const pageWidth = 210, pageHeight = 297;
-  const imgWidth = pageWidth;
-  const imgHeight = (canvas.height * imgWidth) / canvas.width;
-  const imgData = canvas.toDataURL("image/png");
+  const btn = document.getElementById("exportMonthlyPdfBtn");
+  const originalText = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = "กำลังสร้าง PDF...";
 
-  let heightLeft = imgHeight, position = 0;
-  pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
-  heightLeft -= pageHeight;
-  while(heightLeft > 0){
-    position = heightLeft - imgHeight;
-    pdf.addPage();
+  const chartsToSwap = [reportIncomeCatChart, reportExpenseCatChart, reportBranchChart, reportCompareChart].filter(Boolean);
+  const swapped = [];
+
+  try {
+    // html2canvas จับภาพ <canvas> ของ Chart.js สดๆ ได้ไม่เสถียรในบางเบราว์เซอร์
+    // จึงแปลงกราฟเป็นรูปภาพชั่วคราวก่อนถ่ายภาพหน้าจอ แล้วค่อยคืนค่ากลับ
+    chartsToSwap.forEach(chart => {
+      const canvas = chart.canvas;
+      const img = document.createElement("img");
+      img.src = chart.toBase64Image();
+      img.style.width = canvas.offsetWidth + "px";
+      img.style.height = canvas.offsetHeight + "px";
+      canvas.style.display = "none";
+      canvas.parentNode.insertBefore(img, canvas);
+      swapped.push({ canvas, img });
+    });
+
+    const el = document.getElementById("monthlyReportPage");
+    const canvasResult = await html2canvas(el, { scale: 2, backgroundColor: "#F6F3EA", useCORS: true });
+
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF("p", "mm", "a4");
+    const pageWidth = 210, pageHeight = 297;
+    const imgWidth = pageWidth;
+    const imgHeight = (canvasResult.height * imgWidth) / canvasResult.width;
+    const imgData = canvasResult.toDataURL("image/png");
+
+    let heightLeft = imgHeight, position = 0;
     pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
     heightLeft -= pageHeight;
-  }
+    while(heightLeft > 0){
+      position = heightLeft - imgHeight;
+      pdf.addPage();
+      pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+    }
 
-  const val = document.getElementById("reportMonthInput").value;
-  pdf.save("รายงานประจำเดือน_" + val + ".pdf");
+    const val = document.getElementById("reportMonthInput").value;
+    pdf.save("รายงานประจำเดือน_" + val + ".pdf");
+  } catch(err){
+    alert("สร้าง PDF ไม่สำเร็จ: " + err.message);
+  } finally {
+    swapped.forEach(({canvas, img}) => { canvas.style.display = ""; img.remove(); });
+    btn.disabled = false;
+    btn.textContent = originalText;
+  }
+}
+
+// สร้างปุ่มเลือกธุรกิจแบบไดนามิกจากข้อมูลจริง รองรับเพิ่มธุรกิจใหม่ได้โดยไม่ต้องแก้โค้ด
+// ใช้ DOM API แทนการต่อ string เพื่อกันบั๊กกรณีชื่อธุรกิจมีเครื่องหมาย ' หรืออักขระพิเศษ
+function populateBizTabs_(){
+  const businesses = [...new Set(allRows.map(r => r.product))].filter(Boolean).sort();
+
+  const rebuild = (containerId, activeValue) => {
+    const container = document.getElementById(containerId);
+    if(!container) return;
+    container.innerHTML = "";
+
+    const allBtn = document.createElement("button");
+    allBtn.className = "tab-btn" + (activeValue === "all" ? " active" : "");
+    allBtn.dataset.biz = "all";
+    allBtn.textContent = "ทั้งหมด";
+    container.appendChild(allBtn);
+
+    businesses.forEach(biz => {
+      const btn = document.createElement("button");
+      btn.className = "tab-btn" + (activeValue === biz ? " active" : "");
+      btn.dataset.biz = biz;
+      btn.textContent = biz;
+      container.appendChild(btn);
+    });
+  };
+
+  rebuild("bizTabs", activeBiz);
+  rebuild("f_bizTabs", f_activeBiz);
+  rebuild("a_bizTabs", a_activeBiz);
 }
 
 function populateSearchDropdowns_(){
@@ -1296,6 +1407,34 @@ function renderSearchResults_(){
     "<div class='search-summary-card'><div class='search-summary-label' style='color:var(--blue)'>สุทธิ</div><div class='search-summary-value' style='color:" + (stats.net >= 0 ? "var(--green)" : "var(--red)") + "'>" + (stats.net < 0 ? "-" : "") + thb(Math.abs(stats.net)) + "</div></div>" +
     "<div class='search-summary-card'><div class='search-summary-label' style='color:var(--gold)'>VAT ต้องนำส่ง</div><div class='search-summary-value' style='color:" + (stats.vatTotal >= 0 ? "var(--gold)" : "var(--green)") + "'>" + (stats.vatTotal < 0 ? "-" : "") + thb(Math.abs(stats.vatTotal)) + "</div><div style='font-size:11px; color:#8a8878; margin-top:4px;'>ขาย " + thb(stats.vatOnIncome) + " − ซื้อ " + thb(stats.vatOnExpense) + "</div></div>";
 
+  if(searchTypeChart) searchTypeChart.destroy();
+  searchTypeChart = new Chart(document.getElementById("searchTypeChart"), {
+    type: "doughnut",
+    data: {
+      labels: ["รายรับ", "รายจ่าย"],
+      datasets: [{ data: [stats.income, stats.expense], backgroundColor: ["#2D6A4F", "#9A3B2E"] }]
+    },
+    options: { responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{ position:"bottom", labels:{boxWidth:10,font:{size:11}} }, tooltip:{ callbacks:{ label: ctx => ctx.label + ": " + thb(ctx.raw) } } } }
+  });
+
+  const byCat = {};
+  lastSearchResults.forEach(r => { byCat[r.category] = (byCat[r.category]||0) + r.amount; });
+  const catSorted = Object.entries(byCat).sort((a,b) => b[1]-a[1]).slice(0, 8);
+  if(searchCatChart) searchCatChart.destroy();
+  searchCatChart = new Chart(document.getElementById("searchCatChart"), {
+    type: "bar",
+    data: {
+      labels: catSorted.map(d => d[0]),
+      datasets: [{ data: catSorted.map(d => d[1]), backgroundColor: "#3E5C78", borderRadius: 4 }]
+    },
+    options: {
+      indexAxis: "y", responsive:true, maintainAspectRatio:false,
+      scales:{ x:{ ticks:{ callback:v=>(v/1000)+"k" } } },
+      plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label: ctx => thb(ctx.raw) } } }
+    }
+  });
+
   if(lastSearchResults.length === 0){
     tbody.innerHTML = "";
     emptyNote.style.display = "block";
@@ -1392,6 +1531,7 @@ function clearFilters(){
 function renderReimbursementSummary_(){
   const tbody = document.getElementById("reimburseBody");
   const emptyNote = document.getElementById("reimburseEmptyNote");
+  const chartWrap = document.getElementById("reimburseChartWrap");
   if(!tbody) return;
 
   const payable = getFilteredReimburseRows_();
@@ -1399,9 +1539,12 @@ function renderReimbursementSummary_(){
   if(payable.length === 0){
     tbody.innerHTML = "";
     emptyNote.style.display = "block";
+    if(chartWrap) chartWrap.style.display = "none";
+    if(reimburseChart){ reimburseChart.destroy(); reimburseChart = null; }
     return;
   }
   emptyNote.style.display = "none";
+  if(chartWrap) chartWrap.style.display = "block";
 
   const byOwner = {};
   payable.forEach(r => {
@@ -1413,6 +1556,20 @@ function renderReimbursementSummary_(){
   });
 
   const owners = Object.keys(byOwner).sort((a,b) => (byOwner[b].amount+byOwner[b].vat) - (byOwner[a].amount+byOwner[a].vat));
+
+  if(reimburseChart) reimburseChart.destroy();
+  reimburseChart = new Chart(document.getElementById("reimburseChart"), {
+    type: "bar",
+    data: {
+      labels: owners,
+      datasets: [{ data: owners.map(o => byOwner[o].amount + byOwner[o].vat), backgroundColor: "#9A3B2E", borderRadius: 4 }]
+    },
+    options: {
+      indexAxis: "y", responsive:true, maintainAspectRatio:false,
+      scales:{ x:{ ticks:{ callback:v=>(v/1000)+"k" } } },
+      plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label: ctx => "ยอดคืนรวม " + thb(ctx.raw) } } }
+    }
+  });
 
   tbody.innerHTML = owners.map(owner => {
     const s = byOwner[owner];
@@ -1583,6 +1740,7 @@ function loadData(){
         incomingRaw: r["เงินจะเข้าวันที่"] || "-",
         incomingDate: parseFlexibleDate(r["เงินจะเข้าวันที่"])
       })).filter(r => r.amount > 0 && (r.type === "รายได้" || r.type === "รายจ่าย"));
+      populateBizTabs_();
       populateSearchDropdowns_();
       applyFiltersAndRender();
       renderReimbursementSummary_();
@@ -1735,7 +1893,7 @@ function render(rows, excludedNoDate){
   bizRow.innerHTML = businesses.map(biz => {
     const bizRows = rows.filter(r => r.product === biz);
     const s = calcStats(bizRows);
-    const color = BIZ_COLORS[biz] || "#8a8878";
+    const color = getBizColor_(biz);
     const marginColor = s.margin >= 0 ? "var(--green)" : "var(--red)";
     const marginBg = s.margin >= 0 ? "var(--green-l)" : "var(--red-l)";
     return "<div class='biz-card' style='--accent:" + color + "'>" +
