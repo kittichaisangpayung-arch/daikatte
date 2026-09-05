@@ -2,7 +2,7 @@
 <html lang="th">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>รายรับ-รายจ่าย | Dashboard</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+Thai:wght@500;700&family=Noto+Sans+Thai:wght@400;500;600&display=swap');
@@ -150,6 +150,81 @@
   .page-btn:hover:not(:disabled){background:var(--paper);}
   .page-btn:disabled{opacity:.4; cursor:not-allowed;}
   .page-size-select{border:1px solid var(--rule); border-radius:6px; padding:5px 8px; font-size:12px; font-family:inherit; background:#fff;}
+
+  /* ===================== มือถือ / แท็บเล็ต =====================
+     ตารางรายการมี 11–13 คอลัมน์ บนจอมือถือจะเลื่อนซ้ายขวาหาข้อมูลยากมาก
+     จึงซ่อนคอลัมน์รองด้วย .col-hide-sm เหลือเฉพาะ วันที่/สินค้า/ประเภท/จำนวนเงิน/สถานะ
+     ส่วนที่ซ่อนยังดูได้ครบจาก modal รายละเอียด (แตะที่แถว) */
+  html{-webkit-text-size-adjust:100%;}
+  body{overflow-x:hidden;}
+
+  @media (max-width:900px){
+    .charts{grid-template-columns:1fr;}
+  }
+
+  @media (max-width:768px){
+    body{padding:16px 12px;}
+    h1{font-size:22px;}
+    .header{align-items:flex-start; gap:10px; padding-bottom:12px;}
+    .header > div:last-child{width:100%; flex-wrap:wrap;}
+    .refresh-btn{flex:1 1 auto; justify-content:center; min-height:44px;}
+
+    /* แถบเมนูหน้า: เลื่อนแนวนอนได้ ไม่ตัดคำ ไม่ล้นจอ */
+    .page-nav{width:100%; overflow-x:auto; -webkit-overflow-scrolling:touch; flex-wrap:nowrap; scrollbar-width:none;}
+    .page-nav::-webkit-scrollbar{display:none;}
+    .page-nav-btn{white-space:nowrap; flex:0 0 auto; min-height:44px; padding:8px 14px;}
+
+    .filter-bar{flex-direction:column; align-items:stretch; gap:12px; padding:12px 14px;}
+    .filter-group{flex-wrap:wrap; gap:6px;}
+    .tabs{overflow-x:auto; flex-wrap:nowrap; -webkit-overflow-scrolling:touch; scrollbar-width:none; max-width:100%;}
+    .tabs::-webkit-scrollbar{display:none;}
+    .tab-btn{white-space:nowrap; flex:0 0 auto; min-height:38px;}
+    .date-input, .select-input{min-height:42px; font-size:15px;}
+    .clear-btn, .apply-filter-btn{min-height:42px;}
+
+    .cards{grid-template-columns:repeat(2,1fr); gap:10px;}
+    .card{padding:12px 14px;}
+    .card-value{font-size:19px;}
+    .card-label{font-size:11px;}
+    .mom-badge{font-size:10px;}
+
+    .biz-row{grid-template-columns:1fr;}
+    .filter-page-box{padding:16px 14px;}
+    .filter-grid{grid-template-columns:1fr;}
+    .chart-box, .table-box{padding:14px 12px;}
+    .filter-page-actions{flex-direction:column; align-items:stretch; gap:10px;}
+    .filter-page-actions .clear-btn{width:100%;}
+
+    /* ตาราง: ซ่อนคอลัมน์รอง + ลดขนาดให้พออ่านโดยไม่ต้องเลื่อน */
+    .col-hide-sm{display:none;}
+    th, td{padding:8px 6px; font-size:12px;}
+    th{font-size:11px;}
+    .badge{font-size:11px; padding:2px 6px;}
+    .confirm-btn{min-height:36px; padding:7px 10px;}
+
+    .pagination-bar{flex-direction:column; align-items:stretch;}
+    .pagination-controls{justify-content:space-between;}
+    .page-btn{min-height:40px; flex:1;}
+    .table-hint{text-align:left;}
+
+    .modal-box{max-height:92vh;}
+    .modal-grid{grid-template-columns:1fr;}
+    .search-summary-cards{grid-template-columns:repeat(2,1fr);}
+    .login-box{padding:24px 20px;}
+    .login-field input{min-height:44px; font-size:16px;} /* ≥16px กัน iOS Safari ซูมอัตโนมัติตอนโฟกัส */
+  }
+
+  @media (max-width:480px){
+    body{padding:12px 10px;}
+    h1{font-size:19px;}
+    .eyebrow{font-size:10px;}
+    .cards{grid-template-columns:1fr;}
+    .card-value{font-size:22px;}
+    .biz-stats{grid-template-columns:repeat(2,1fr);}
+    .search-summary-cards{grid-template-columns:1fr;}
+    .page-nav-btn{font-size:12px; padding:8px 12px;}
+    th, td{padding:7px 5px; font-size:11.5px;}
+  }
 </style>
 </head>
 <body>
@@ -193,6 +268,7 @@
     <button class="page-nav-btn active" data-page="dashboard" onclick="showPage('dashboard')">📊 แดชบอร์ด</button>
     <button class="page-nav-btn" data-page="filter" onclick="showPage('filter')">🔍 ตัวกรองข้อมูล</button>
     <button class="page-nav-btn" data-page="analysis" onclick="showPage('analysis')">📈 วิเคราะห์เชิงลึก</button>
+    <button class="page-nav-btn" data-page="reimburse" onclick="showPage('reimburse')">💸 คืนเงิน/ค้างรับ</button>
     <button class="page-nav-btn" data-page="monthly" onclick="showPage('monthly')">🗓️ รายงานประจำเดือน</button>
   </div>
 
@@ -208,86 +284,144 @@
   <!-- ===================== หน้าตัวกรองข้อมูล (แยกอิสระ ไม่ผูกกับแดชบอร์ดหลัก) ===================== -->
   <div id="filterPage" style="display:none;">
     <div class="filter-page-box">
-      <div class="filter-section-title" style="font-size:14px; font-weight:600; color:var(--ink); margin-bottom:16px;">ค้นหา/กรองรายการ (แยกต่างหากจากแดชบอร์ดหลัก)</div>
+      <div style="display:flex; gap:10px; margin-bottom:16px;">
+        <input type="text" class="select-input" id="f_keywordInput" placeholder="🔍 ค้นหาจากรายละเอียด, สินค้า, ผู้รับผิดชอบ..." style="flex:1; font-size:15px; padding:12px 14px;">
+        <button class="apply-filter-btn" onclick="runSearch_()" style="white-space:nowrap;">ค้นหา</button>
+      </div>
 
-      <div class="filter-section">
-        <div class="filter-section-title">ธุรกิจ</div>
-        <div class="tabs" id="f_bizTabs">
-          <button class="tab-btn active" data-biz="all">ทั้งหมด</button>
+      <div style="display:flex; gap:20px; flex-wrap:wrap; margin-bottom:8px;">
+        <div class="filter-section" style="margin-bottom:10px;">
+          <div class="filter-section-title">ธุรกิจ</div>
+          <div class="tabs" id="f_bizTabs">
+            <button class="tab-btn active" data-biz="all">ทั้งหมด</button>
+          </div>
+        </div>
+        <div class="filter-section" style="margin-bottom:10px;">
+          <div class="filter-section-title">การรับเงิน</div>
+          <div class="tabs" id="f_methodTabs">
+            <button class="tab-btn active" data-method="all">ทั้งหมด</button>
+            <button class="tab-btn" data-method="เครดิต">เครดิต</button>
+            <button class="tab-btn" data-method="เงินสด">เงินสด</button>
+          </div>
         </div>
       </div>
 
-      <div class="filter-section">
-        <div class="filter-section-title">การรับเงิน</div>
-        <div class="tabs" id="f_methodTabs">
-          <button class="tab-btn active" data-method="all">ทั้งหมด</button>
-          <button class="tab-btn" data-method="เครดิต">เครดิต</button>
-          <button class="tab-btn" data-method="เงินสด">เงินสด</button>
-        </div>
-      </div>
+      <button class="clear-btn" id="advFilterToggleBtn" onclick="toggleAdvancedFilters_()" style="margin-bottom:4px;">▾ ตัวกรองเพิ่มเติม</button>
 
-      <div class="filter-section">
-        <div class="filter-section-title">Vat Check</div>
-        <div class="tabs" id="f_vatCheckTabs">
-          <button class="tab-btn active" data-vatcheck="all">ทั้งหมด</button>
-          <button class="tab-btn" data-vatcheck="true">มี VAT (TRUE)</button>
-          <button class="tab-btn" data-vatcheck="false">ไม่มี VAT (FALSE)</button>
+      <div id="advFilterPanel" style="display:none; margin-top:16px; padding-top:16px; border-top:1px solid var(--rule);">
+        <div class="filter-section">
+          <div class="filter-section-title">Vat Check</div>
+          <div class="tabs" id="f_vatCheckTabs">
+            <button class="tab-btn active" data-vatcheck="all">ทั้งหมด</button>
+            <button class="tab-btn" data-vatcheck="true">มี VAT (TRUE)</button>
+            <button class="tab-btn" data-vatcheck="false">ไม่มี VAT (FALSE)</button>
+          </div>
         </div>
-      </div>
 
-      <div class="filter-section">
-        <div class="filter-section-title">ช่วงวันที่ (ตามวันที่ทำรายการ)</div>
-        <div style="display:flex; align-items:center; gap:8px;">
-          <input type="date" class="date-input" id="f_dateFrom">
-          <span style="color:#8a8878">ถึง</span>
-          <input type="date" class="date-input" id="f_dateTo">
+        <div class="filter-section">
+          <div class="filter-section-title">Confirm VAT (ยืนยันเอกสาร VAT)</div>
+          <div class="tabs" id="f_confirmVatTabs">
+            <button class="tab-btn active" data-confirmvat="all">ทั้งหมด</button>
+            <button class="tab-btn" data-confirmvat="true">ยืนยันแล้ว (TRUE)</button>
+            <button class="tab-btn" data-confirmvat="false">ไม่ผ่าน (FALSE)</button>
+            <button class="tab-btn" data-confirmvat="blank">ยังไม่ระบุ (ว่าง)</button>
+          </div>
         </div>
-      </div>
 
-      <div class="filter-grid">
         <div class="filter-section">
-          <div class="filter-section-title">หมวดหมู่ (Catagory)</div>
-          <select class="select-input" id="f_categorySelect">
-            <option value="all">ทั้งหมด</option>
-          </select>
+          <div class="filter-section-title">ช่วงวันที่ (ตามวันที่ทำรายการ)</div>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <input type="date" class="date-input" id="f_dateFrom">
+            <span style="color:#8a8878">ถึง</span>
+            <input type="date" class="date-input" id="f_dateTo">
+          </div>
         </div>
-        <div class="filter-section">
-          <div class="filter-section-title">สาขา</div>
-          <select class="select-input" id="f_branchSelect">
-            <option value="all">ทั้งหมด</option>
-          </select>
-        </div>
-        <div class="filter-section">
-          <div class="filter-section-title">ผู้รับผิดชอบ</div>
-          <select class="select-input" id="f_ownerSelect">
-            <option value="all">ทั้งหมด</option>
-          </select>
-        </div>
-      </div>
 
-      <div class="filter-grid">
-        <div class="filter-section">
-          <div class="filter-section-title">จำนวนเงินขั้นต่ำ (บาท)</div>
-          <input type="number" class="select-input" id="f_minAmountInput" placeholder="ไม่กำหนด">
+        <div class="filter-grid">
+          <div class="filter-section">
+            <div class="filter-section-title">หมวดหมู่ (Catagory)</div>
+            <select class="select-input" id="f_categorySelect">
+              <option value="all">ทั้งหมด</option>
+            </select>
+          </div>
+          <div class="filter-section">
+            <div class="filter-section-title">สาขา</div>
+            <select class="select-input" id="f_branchSelect">
+              <option value="all">ทั้งหมด</option>
+            </select>
+          </div>
+          <div class="filter-section">
+            <div class="filter-section-title">ผู้รับผิดชอบ</div>
+            <select class="select-input" id="f_ownerSelect">
+              <option value="all">ทั้งหมด</option>
+            </select>
+          </div>
         </div>
-        <div class="filter-section">
-          <div class="filter-section-title">จำนวนเงินสูงสุด (บาท)</div>
-          <input type="number" class="select-input" id="f_maxAmountInput" placeholder="ไม่กำหนด">
-        </div>
-        <div class="filter-section">
-          <div class="filter-section-title">ค้นหาคำ (รายละเอียด/สินค้า)</div>
-          <input type="text" class="select-input" id="f_keywordInput" placeholder="พิมพ์คำค้นหา...">
+
+        <div class="filter-grid">
+          <div class="filter-section">
+            <div class="filter-section-title">จำนวนเงินขั้นต่ำ (บาท)</div>
+            <input type="number" class="select-input" id="f_minAmountInput" placeholder="ไม่กำหนด">
+          </div>
+          <div class="filter-section">
+            <div class="filter-section-title">จำนวนเงินสูงสุด (บาท)</div>
+            <input type="number" class="select-input" id="f_maxAmountInput" placeholder="ไม่กำหนด">
+          </div>
         </div>
       </div>
 
       <div class="filter-page-actions">
         <button class="clear-btn" onclick="clearSearchFilters_()">ล้างตัวกรองทั้งหมด</button>
-        <div style="display:flex; gap:10px;">
-          <button class="clear-btn" onclick="exportRawExcel_()">📊 Export Excel</button>
-          <button class="apply-filter-btn" onclick="runSearch_()">🔍 ค้นหา</button>
+        <button class="clear-btn" onclick="exportRawExcel_()">📊 Export Excel</button>
+      </div>
+    </div>
+
+    <div class="table-box" id="searchResultsBox" style="display:none;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:8px;">
+        <div class="chart-title" style="margin-bottom:0;">ผลการค้นหา</div>
+        <div id="searchCountLabel" style="font-size:12px; color:#8a8878;"></div>
+      </div>
+      <div class="search-summary-cards" id="searchSummary"></div>
+      <div class="charts">
+        <div class="chart-box" style="padding:14px;">
+          <div class="chart-title" style="font-size:12px;">รายรับ vs รายจ่าย</div>
+          <div style="position:relative;height:180px;">
+            <canvas id="searchTypeChart" role="img" aria-label="กราฟวงกลมสัดส่วนรายรับกับรายจ่ายในผลค้นหา"></canvas>
+          </div>
+        </div>
+        <div class="chart-box" style="padding:14px;">
+          <div class="chart-title" style="font-size:12px;">แยกตามหมวดหมู่</div>
+          <div style="position:relative;height:180px;">
+            <canvas id="searchCatChart" role="img" aria-label="กราฟแท่งแนวนอนยอดรวมแยกตามหมวดหมู่ในผลค้นหา"></canvas>
+          </div>
+        </div>
+      </div>
+      <div style="overflow-x:auto;">
+        <table class="tbl-search">
+          <thead>
+            <tr>
+              <th>วันที่</th><th>สินค้า</th><th class="col-hide-sm">รายละเอียดสินค้า</th><th>ประเภท</th><th class="col-hide-sm">หมวดหมู่</th><th class="col-hide-sm">รายละเอียด</th>
+              <th style="text-align:right">จำนวนเงิน</th><th class="col-hide-sm">การรับเงิน</th><th class="col-hide-sm">Confirm VAT</th><th class="col-hide-sm">สาขา</th><th class="col-hide-sm">ผู้รับผิดชอบ</th>
+            </tr>
+          </thead>
+          <tbody id="searchResultsBody"></tbody>
+        </table>
+      </div>
+      <div class="empty-note" id="searchEmptyNote" style="display:none;">ไม่พบรายการที่ตรงกับตัวกรอง</div>
+      <div class="pagination-bar" id="searchPaginationBar">
+        <div class="pagination-info" id="searchPaginationInfo"></div>
+        <div class="pagination-controls">
+          <button class="page-btn" id="searchPrevBtn" onclick="changeSearchPage(-1)">‹ ก่อนหน้า</button>
+          <span class="pagination-info" id="searchPageIndicator"></span>
+          <button class="page-btn" id="searchNextBtn" onclick="changeSearchPage(1)">ถัดไป ›</button>
         </div>
       </div>
     </div>
+
+  </div>
+
+  <!-- ===================== หน้าคืนเงิน/รับเงินตามคน ===================== -->
+  <div id="reimburseCombinedPage" style="display:none;">
 
     <div class="table-box" id="reimburseBox" style="margin-bottom:24px;">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:10px;">
@@ -347,47 +481,6 @@
       <div class="empty-note" id="receiveEmptyNote" style="display:none;">ไม่มีเครดิตค้างรับตอนนี้</div>
     </div>
 
-    <div class="table-box" id="searchResultsBox" style="display:none;">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:8px;">
-        <div class="chart-title" style="margin-bottom:0;">ผลการค้นหา</div>
-        <div id="searchCountLabel" style="font-size:12px; color:#8a8878;"></div>
-      </div>
-      <div class="search-summary-cards" id="searchSummary"></div>
-      <div class="charts">
-        <div class="chart-box" style="padding:14px;">
-          <div class="chart-title" style="font-size:12px;">รายรับ vs รายจ่าย</div>
-          <div style="position:relative;height:180px;">
-            <canvas id="searchTypeChart" role="img" aria-label="กราฟวงกลมสัดส่วนรายรับกับรายจ่ายในผลค้นหา"></canvas>
-          </div>
-        </div>
-        <div class="chart-box" style="padding:14px;">
-          <div class="chart-title" style="font-size:12px;">แยกตามหมวดหมู่</div>
-          <div style="position:relative;height:180px;">
-            <canvas id="searchCatChart" role="img" aria-label="กราฟแท่งแนวนอนยอดรวมแยกตามหมวดหมู่ในผลค้นหา"></canvas>
-          </div>
-        </div>
-      </div>
-      <div style="overflow-x:auto;">
-        <table>
-          <thead>
-            <tr>
-              <th>วันที่</th><th>สินค้า</th><th>รายละเอียดสินค้า</th><th>ประเภท</th><th>หมวดหมู่</th><th>รายละเอียด</th>
-              <th style="text-align:right">จำนวนเงิน</th><th>การรับเงิน</th><th>สาขา</th><th>ผู้รับผิดชอบ</th>
-            </tr>
-          </thead>
-          <tbody id="searchResultsBody"></tbody>
-        </table>
-      </div>
-      <div class="empty-note" id="searchEmptyNote" style="display:none;">ไม่พบรายการที่ตรงกับตัวกรอง</div>
-      <div class="pagination-bar" id="searchPaginationBar">
-        <div class="pagination-info" id="searchPaginationInfo"></div>
-        <div class="pagination-controls">
-          <button class="page-btn" id="searchPrevBtn" onclick="changeSearchPage(-1)">‹ ก่อนหน้า</button>
-          <span class="pagination-info" id="searchPageIndicator"></span>
-          <button class="page-btn" id="searchNextBtn" onclick="changeSearchPage(1)">ถัดไป ›</button>
-        </div>
-      </div>
-    </div>
   </div>
 
   <!-- ===================== หน้าวิเคราะห์เชิงลึก (แยกอิสระ ไม่ผูกกับแดชบอร์ดหลัก) ===================== -->
@@ -526,10 +619,10 @@
       </div>
     </div>
     <div class="filter-group">
-      <span class="filter-label">ช่วงวันที่</span>
-      <input type="date" class="date-input" id="dateFrom">
-      <span style="color:#8a8878">ถึง</span>
-      <input type="date" class="date-input" id="dateTo">
+      <span class="filter-label">เดือน</span>
+      <input type="month" class="date-input" id="dashboardMonthInput">
+      <input type="date" id="dateFrom" style="display:none;">
+      <input type="date" id="dateTo" style="display:none;">
     </div>
     <button class="clear-btn" onclick="clearFilters()">ล้างตัวกรอง</button>
   </div>
@@ -606,16 +699,18 @@
 
   <div class="table-box">
     <div class="chart-title">รายการทั้งหมด</div>
-    <table>
+    <div style="overflow-x:auto;">
+    <table class="tbl-main">
       <thead>
         <tr>
-          <th>วันที่</th><th>สินค้า</th><th>รายละเอียดสินค้า</th><th>ประเภท</th><th>หมวดหมู่</th><th>รายละเอียด</th>
-          <th style="text-align:right">จำนวนเงิน</th><th style="text-align:right">VAT</th>
-          <th>การรับเงิน</th><th>เงินจะเข้าวันที่</th><th>สาขา</th><th>ผู้รับผิดชอบ</th><th>สถานะ</th>
+          <th>วันที่</th><th>สินค้า</th><th class="col-hide-sm">รายละเอียดสินค้า</th><th>ประเภท</th><th class="col-hide-sm">หมวดหมู่</th><th class="col-hide-sm">รายละเอียด</th>
+          <th style="text-align:right">จำนวนเงิน</th><th style="text-align:right" class="col-hide-sm">VAT</th>
+          <th>การรับเงิน</th><th class="col-hide-sm">เงินจะเข้าวันที่</th><th class="col-hide-sm">สาขา</th><th class="col-hide-sm">ผู้รับผิดชอบ</th><th>สถานะ</th>
         </tr>
       </thead>
       <tbody id="tableBody"></tbody>
     </table>
+    </div>
     <div class="empty-note" id="emptyNote" style="display:none;">ไม่มีรายการในช่วงที่เลือก</div>
     <div class="pagination-bar" id="paginationBar">
       <div class="pagination-info" id="paginationInfo"></div>
@@ -631,7 +726,7 @@
         <button class="page-btn" id="nextPageBtn" onclick="changePage(1)">ถัดไป ›</button>
       </div>
     </div>
-    <div class="table-hint">คลิกที่แถวเพื่อดูรายละเอียดทั้งหมด</div>
+    <div class="table-hint">แตะที่แถวเพื่อดูรายละเอียดทั้งหมด (บนมือถือคอลัมน์รองถูกซ่อนไว้)</div>
   </div>
 
   </div>
@@ -688,7 +783,7 @@ let allRows = [];
 let branchChart, categoryChart, trendChart;
 let topIncomeChart, topExpenseChart, yoyChart;
 let reportIncomeCatChart, reportExpenseCatChart, reportBranchChart, reportCompareChart;
-let reimburseChart, searchTypeChart, searchCatChart;
+let reimburseChart, receiveChart, searchTypeChart, searchCatChart;
 let a_activeBiz = "all";
 let activeBiz = "all";
 let activeMethod = "all";
@@ -706,11 +801,24 @@ let f_activeBiz = "all";
 let f_activeMethod = "all";
 let f_activeCategory = "all";
 let f_activeVatCheck = "all";
+let f_activeConfirmVat = "all";
 let f_activeBranch = "all";
 let f_activeOwner = "all";
 let searchPage = 1;
 const searchPageSize = 20;
 let lastSearchResults = [];
+
+// ข้อมูลจาก Sheet ถูกนำมาต่อเป็น HTML string หลายจุด ถ้าค่าในเซลล์มี < " ' จะทำให้โครงสร้าง
+// HTML เพี้ยนหรือแทรกสคริปต์ได้ ทุกค่าที่มาจาก Sheet/ผู้ใช้ต้องผ่าน esc() ก่อนต่อเข้า HTML เสมอ
+function esc(v){
+  if(v === undefined || v === null) return "";
+  return String(v)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
 
 function thb(n){
   n = Number.isFinite(n) ? n : 0;
@@ -803,6 +911,8 @@ function openDetail(key){
     ["รายละเอียด", r.desc || "-"],
     ["จำนวนเงิน", sign + thb(r.amount) + (r.discount ? " (ในบิล " + thb(r.billAmount) + " + ส่วนต่างนอกบิล " + thb(r.discount) + ")" : "")],
     ["VAT", r.vat ? thb(r.vat) : "-"],
+    ["Vat Check", r.vatCheck ? "TRUE" : "FALSE"],
+    ["Confirm VAT", r.confirmVat === null ? "ยังไม่ระบุ" : (r.confirmVat ? "ยืนยันแล้ว (TRUE)" : "ไม่ผ่าน (FALSE)")],
     ["การรับเงิน", r.method],
     ["ระยะเครดิต", r.term !== "-" ? r.term + " วัน" : "-"],
     ["เงินจะเข้าวันที่", r.incomingRaw],
@@ -826,7 +936,7 @@ function openDetail(key){
     "<div class='modal-grid'>" +
     fields.map(([label,val]) =>
       "<div><div class='modal-field-label'>" + label + "</div><div class='modal-field-value' style='" +
-      (label === "จำนวนเงิน" ? "color:" + signColor : "") + "'>" + (val || "-") + "</div></div>"
+      (label === "จำนวนเงิน" ? "color:" + signColor : "") + "'>" + (esc(val) || "-") + "</div></div>"
     ).join("") +
     "</div>";
 
@@ -848,10 +958,18 @@ function loadGalleryImage_(picPath, index){
     .then(res => res.json())
     .then(data => {
       if(data.success && data.url){
-        cell.innerHTML = "<img src='" + data.url + "' alt='รูปประกอบรายการ' onclick=\"openLightbox('" + data.url + "')\" " +
-          "onerror=\"this.parentElement.innerHTML='<div class=&quot;image-gallery-fallback&quot;>โหลดรูปไม่ขึ้น</div>'\">";
+        // สร้างด้วย DOM API แทนการต่อ HTML string เพราะ URL จาก Web App อาจมี ' " ที่ทำให้ onclick เพี้ยน
+        cell.innerHTML = "";
+        const img = document.createElement("img");
+        img.src = data.url;
+        img.alt = "รูปประกอบรายการ";
+        img.addEventListener("click", () => openLightbox(data.url));
+        img.addEventListener("error", () => {
+          cell.innerHTML = "<div class='image-gallery-fallback'>โหลดรูปไม่ขึ้น</div>";
+        });
+        cell.appendChild(img);
       } else {
-        cell.innerHTML = "<div class='image-gallery-fallback'>หาไม่เจอ: " + (data.error || "-") + "</div>";
+        cell.innerHTML = "<div class='image-gallery-fallback'>หาไม่เจอ: " + esc(data.error || "-") + "</div>";
       }
     })
     .catch(() => {
@@ -871,6 +989,34 @@ function closeLightbox(){
 function closeDetail(){
   document.getElementById("modalOverlay").classList.remove("open");
 }
+
+// Event delegation แทน inline onclick: ค่าที่มาจาก Sheet (key, ชื่อผู้รับผิดชอบ) ไม่ต้องถูกฝัง
+// เป็นโค้ด JS ใน attribute อีก จึงไม่พังเมื่อค่ามี ' " หรืออักขระพิเศษ และไม่เปิดช่องให้ inject
+document.getElementById("tableBody").addEventListener("click", (e) => {
+  const confirmBtn = e.target.closest("button[data-confirm-key]");
+  if(confirmBtn){
+    confirmReceived(confirmBtn.dataset.confirmKey);
+    return;
+  }
+  if(e.target.closest("[data-no-detail]")) return;
+  const tr = e.target.closest("tr[data-key]");
+  if(tr) openDetail(tr.dataset.key);
+});
+
+document.getElementById("searchResultsBody").addEventListener("click", (e) => {
+  const tr = e.target.closest("tr[data-key]");
+  if(tr) openDetail(tr.dataset.key);
+});
+
+document.getElementById("reimburseBody").addEventListener("click", (e) => {
+  const btn = e.target.closest("button[data-owner]");
+  if(btn) confirmAllForOwner(btn.dataset.owner);
+});
+
+document.getElementById("receiveBody").addEventListener("click", (e) => {
+  const btn = e.target.closest("button[data-owner]");
+  if(btn) confirmAllReceivableForOwner(btn.dataset.owner);
+});
 
 document.getElementById("bizTabs").addEventListener("click", (e) => {
   if(e.target.classList.contains("tab-btn")){
@@ -898,8 +1044,24 @@ document.getElementById("trendTabs").addEventListener("click", (e) => {
     applyFiltersAndRender();
   }
 });
-document.getElementById("dateFrom").addEventListener("change", () => { currentPage = 1; applyFiltersAndRender(); });
-document.getElementById("dateTo").addEventListener("change", () => { currentPage = 1; applyFiltersAndRender(); });
+document.getElementById("dashboardMonthInput").addEventListener("change", (e) => {
+  syncMonthInputToDateRange_(e.target.value);
+  currentPage = 1;
+  applyFiltersAndRender();
+});
+
+function syncMonthInputToDateRange_(monthVal){
+  if(!monthVal){
+    document.getElementById("dateFrom").value = "";
+    document.getElementById("dateTo").value = "";
+    return;
+  }
+  const [y, m] = monthVal.split("-").map(Number);
+  const firstDay = new Date(y, m - 1, 1);
+  const lastDay = new Date(y, m, 0);
+  document.getElementById("dateFrom").value = fmtDateInput_(firstDay);
+  document.getElementById("dateTo").value = fmtDateInput_(lastDay);
+}
 
 // ===== ตัวกรองของ "หน้าตัวกรองข้อมูล" — แยกอิสระจากแดชบอร์ดหลักโดยสมบูรณ์ =====
 document.getElementById("f_bizTabs").addEventListener("click", (e) => {
@@ -923,6 +1085,13 @@ document.getElementById("f_vatCheckTabs").addEventListener("click", (e) => {
     f_activeVatCheck = e.target.dataset.vatcheck;
   }
 });
+document.getElementById("f_confirmVatTabs").addEventListener("click", (e) => {
+  if(e.target.classList.contains("tab-btn")){
+    document.querySelectorAll("#f_confirmVatTabs .tab-btn").forEach(b => b.classList.remove("active"));
+    e.target.classList.add("active");
+    f_activeConfirmVat = e.target.dataset.confirmvat;
+  }
+});
 document.getElementById("f_categorySelect").addEventListener("change", (e) => { f_activeCategory = e.target.value; });
 document.getElementById("f_branchSelect").addEventListener("change", (e) => { f_activeBranch = e.target.value; });
 document.getElementById("f_ownerSelect").addEventListener("change", (e) => { f_activeOwner = e.target.value; });
@@ -941,12 +1110,22 @@ function showPage(name){
   document.getElementById("dashboardPage").style.display = name === "dashboard" ? "block" : "none";
   document.getElementById("filterPage").style.display = name === "filter" ? "block" : "none";
   document.getElementById("analysisPage").style.display = name === "analysis" ? "block" : "none";
+  document.getElementById("reimburseCombinedPage").style.display = name === "reimburse" ? "block" : "none";
   document.getElementById("monthlyReportPage").style.display = name === "monthly" ? "block" : "none";
   document.querySelectorAll("#pageNav .page-nav-btn").forEach(b => b.classList.toggle("active", b.dataset.page === name));
   if(name === "analysis") renderAnalysisPage_();
-  if(name === "filter") renderReimbursementSummary_();
+  if(name === "reimburse") { renderReimbursementSummary_(); renderReceivableSummary_(); }
   if(name === "monthly") renderMonthlyReport_();
   window.scrollTo(0, 0);
+}
+
+// แผงตัวกรองเพิ่มเติมของหน้าตัวกรองข้อมูล (VAT, ช่วงวันที่, หมวดหมู่, สาขา, ผู้รับผิดชอบ, ช่วงยอดเงิน)
+function toggleAdvancedFilters_(){
+  const panel = document.getElementById("advFilterPanel");
+  const btn = document.getElementById("advFilterToggleBtn");
+  const isOpen = panel.style.display !== "none";
+  panel.style.display = isOpen ? "none" : "block";
+  btn.textContent = isOpen ? "▾ ตัวกรองเพิ่มเติม" : "▴ ซ่อนตัวกรองเพิ่มเติม";
 }
 
 function renderAnalysisPage_(){
@@ -1101,7 +1280,7 @@ function renderMonthlyReport_(){
     const color = getBizColor_(biz);
     const marginColor = s.margin >= 0 ? "var(--green)" : "var(--red)";
     return "<div class='biz-card' style='--accent:" + color + "'>" +
-      "<div class='biz-card-head'><span class='biz-name'>" + biz + "</span>" +
+      "<div class='biz-card-head'><span class='biz-name'>" + esc(biz) + "</span>" +
       "<span class='biz-margin-badge' style='background:" + (s.margin>=0?"var(--green-l)":"var(--red-l)") + ";color:" + marginColor + "'>อัตรากำไร " + s.margin.toFixed(1) + "%</span></div>" +
       "<div class='biz-stats'>" +
         "<div><div class='biz-stat-label'>รายรับ</div><div class='biz-stat-value' style='color:var(--green)'>" + thb(s.income) + "</div></div>" +
@@ -1121,7 +1300,7 @@ function renderMonthlyReport_(){
     document.getElementById(tbodyId).innerHTML = sorted.length === 0
       ? "<tr><td colspan='3' style='text-align:center;color:#8a8878;'>ไม่มีข้อมูล</td></tr>"
       : sorted.map(([cat,amt]) =>
-          "<tr><td>" + cat + "</td><td style='text-align:right'>" + thb(amt) + "</td><td style='text-align:right;color:#8a8878'>" + (total>0 ? (amt/total*100).toFixed(1) : "0.0") + "%</td></tr>"
+          "<tr><td>" + esc(cat) + "</td><td style='text-align:right'>" + thb(amt) + "</td><td style='text-align:right;color:#8a8878'>" + (total>0 ? (amt/total*100).toFixed(1) : "0.0") + "%</td></tr>"
         ).join("") + "<tr><td style='font-weight:700'>รวม</td><td style='text-align:right;font-weight:700'>" + thb(total) + "</td><td style='text-align:right'>100%</td></tr>";
 
     const existing = chartVarSetter();
@@ -1154,7 +1333,7 @@ function renderMonthlyReport_(){
     ? "<tr><td colspan='4' style='text-align:center;color:#8a8878;'>ไม่มีข้อมูล</td></tr>"
     : branchEntries.map(([branch,s]) => {
         const net = s.income - s.expense;
-        return "<tr><td>" + branch + "</td><td style='text-align:right;color:var(--green)'>" + thb(s.income) + "</td><td style='text-align:right;color:var(--red)'>" + thb(s.expense) + "</td><td style='text-align:right;font-weight:700;color:" + (net>=0?"var(--green)":"var(--red)") + "'>" + thb(net) + "</td></tr>";
+        return "<tr><td>" + esc(branch) + "</td><td style='text-align:right;color:var(--green)'>" + thb(s.income) + "</td><td style='text-align:right;color:var(--red)'>" + thb(s.expense) + "</td><td style='text-align:right;font-weight:700;color:" + (net>=0?"var(--green)":"var(--red)") + "'>" + thb(net) + "</td></tr>";
       }).join("");
 
   if(reportBranchChart) reportBranchChart.destroy();
@@ -1337,6 +1516,10 @@ function runSearch_(){
     if(f_activeMethod !== "all" && r.method !== f_activeMethod) return false;
     if(f_activeCategory !== "all" && r.category !== f_activeCategory) return false;
     if(f_activeVatCheck !== "all" && r.vatCheck !== (f_activeVatCheck === "true")) return false;
+    if(f_activeConfirmVat !== "all"){
+      if(f_activeConfirmVat === "blank"){ if(r.confirmVat !== null) return false; }
+      else if(r.confirmVat !== (f_activeConfirmVat === "true")) return false;
+    }
     if(f_activeBranch !== "all" && r.branch !== f_activeBranch) return false;
     if(f_activeOwner !== "all" && r.owner !== f_activeOwner) return false;
     if(Number.isFinite(minAmount) && r.amount < minAmount) return false;
@@ -1375,6 +1558,7 @@ function exportRawExcel_(){
     "ส่วนต่างนอกบิล": r.discount,
     "ยอดรวมจริง": r.amount,
     "Vat Check": r.vatCheck ? "TRUE" : "FALSE",
+    "Confirm VAT": r.confirmVat === null ? "" : (r.confirmVat ? "TRUE" : "FALSE"),
     "VAT": r.vat,
     "การรับเงิน": r.method,
     "ระยะเครดิต (วัน)": r.term !== "-" ? r.term : "",
@@ -1391,6 +1575,14 @@ function exportRawExcel_(){
 
   const timestamp = new Date().toISOString().slice(0,10);
   XLSX.writeFile(wb, "รายรับรายจ่าย_" + timestamp + ".xlsx");
+}
+
+// Confirm VAT มี 3 สถานะ (TRUE/FALSE/ว่าง) แสดงเป็น badge สีให้อ่านสถานะได้เร็ว
+function confirmVatCellHtml_(v){
+  if(v === null) return "<span style='color:#8a8878'>—</span>";
+  return v
+    ? "<span class='badge income'>ยืนยันแล้ว</span>"
+    : "<span class='badge expense'>ไม่ผ่าน</span>";
 }
 
 function renderSearchResults_(){
@@ -1458,17 +1650,18 @@ function renderSearchResults_(){
   tbody.innerHTML = paged.map(r => {
     const cls = r.type === "รายได้" ? "income" : "expense";
     const sign = r.type === "รายจ่าย" ? "-" : "+";
-    return "<tr onclick=\"openDetail('" + r.key + "')\">" +
-      "<td>" + r.dateRaw + "</td>" +
-      "<td>" + r.product + "</td>" +
-      "<td style='color:#6b6a63'>" + r.productDetail + "</td>" +
-      "<td><span class='badge " + cls + "'>" + r.type + "</span></td>" +
-      "<td>" + r.category + "</td>" +
-      "<td style='color:#6b6a63'>" + (r.desc || "-") + "</td>" +
+    return "<tr data-key='" + esc(r.key) + "'>" +
+      "<td>" + esc(r.dateRaw) + "</td>" +
+      "<td>" + esc(r.product) + "</td>" +
+      "<td class='col-hide-sm' style='color:#6b6a63'>" + esc(r.productDetail) + "</td>" +
+      "<td><span class='badge " + cls + "'>" + esc(r.type) + "</span></td>" +
+      "<td class='col-hide-sm'>" + esc(r.category) + "</td>" +
+      "<td class='col-hide-sm' style='color:#6b6a63'>" + (esc(r.desc) || "-") + "</td>" +
       "<td style='text-align:right;font-weight:600;color:" + (r.type === "รายได้" ? "#2D6A4F" : "#9A3B2E") + "'>" + sign + thb(r.amount) + "</td>" +
-      "<td>" + r.method + "</td>" +
-      "<td>" + r.branch + "</td>" +
-      "<td>" + r.owner + "</td>" +
+      "<td class='col-hide-sm'>" + esc(r.method) + "</td>" +
+      "<td class='col-hide-sm'>" + confirmVatCellHtml_(r.confirmVat) + "</td>" +
+      "<td class='col-hide-sm'>" + esc(r.branch) + "</td>" +
+      "<td class='col-hide-sm'>" + esc(r.owner) + "</td>" +
       "</tr>";
   }).join("");
 }
@@ -1489,6 +1682,7 @@ function clearSearchFilters_(){
   f_activeMethod = "all";
   f_activeCategory = "all";
   f_activeVatCheck = "all";
+  f_activeConfirmVat = "all";
   f_activeBranch = "all";
   f_activeOwner = "all";
   document.querySelectorAll("#f_bizTabs .tab-btn").forEach(b => b.classList.remove("active"));
@@ -1497,6 +1691,8 @@ function clearSearchFilters_(){
   document.querySelector('#f_methodTabs .tab-btn[data-method="all"]').classList.add("active");
   document.querySelectorAll("#f_vatCheckTabs .tab-btn").forEach(b => b.classList.remove("active"));
   document.querySelector('#f_vatCheckTabs .tab-btn[data-vatcheck="all"]').classList.add("active");
+  document.querySelectorAll("#f_confirmVatTabs .tab-btn").forEach(b => b.classList.remove("active"));
+  document.querySelector('#f_confirmVatTabs .tab-btn[data-confirmvat="all"]').classList.add("active");
   document.getElementById("f_categorySelect").value = "all";
   document.getElementById("f_branchSelect").value = "all";
   document.getElementById("f_ownerSelect").value = "all";
@@ -1516,6 +1712,7 @@ function changePageSize(val){
 }
 
 function clearFilters(){
+  document.getElementById("dashboardMonthInput").value = "";
   document.getElementById("dateFrom").value = "";
   document.getElementById("dateTo").value = "";
   activeBiz = "all";
@@ -1555,14 +1752,14 @@ function renderReimbursementSummary_(){
     byOwner[owner].vat += (r.vat || 0);
   });
 
-  const owners = Object.keys(byOwner).sort((a,b) => (byOwner[b].amount+byOwner[b].vat) - (byOwner[a].amount+byOwner[a].vat));
+  const owners = Object.keys(byOwner).sort((a,b) => byOwner[b].amount - byOwner[a].amount);
 
   if(reimburseChart) reimburseChart.destroy();
   reimburseChart = new Chart(document.getElementById("reimburseChart"), {
     type: "bar",
     data: {
       labels: owners,
-      datasets: [{ data: owners.map(o => byOwner[o].amount + byOwner[o].vat), backgroundColor: "#9A3B2E", borderRadius: 4 }]
+      datasets: [{ data: owners.map(o => byOwner[o].amount), backgroundColor: "#9A3B2E", borderRadius: 4 }]
     },
     options: {
       indexAxis: "y", responsive:true, maintainAspectRatio:false,
@@ -1573,14 +1770,14 @@ function renderReimbursementSummary_(){
 
   tbody.innerHTML = owners.map(owner => {
     const s = byOwner[owner];
-    const total = s.amount + s.vat;
+    const total = s.amount; // Amount รวม VAT อยู่แล้ว ไม่ต้องบวกซ้ำ
     return "<tr>" +
-      "<td style='font-weight:600'>" + owner + "</td>" +
+      "<td style='font-weight:600'>" + esc(owner) + "</td>" +
       "<td style='text-align:right'>" + s.count + "</td>" +
       "<td style='text-align:right'>" + thb(s.amount) + "</td>" +
       "<td style='text-align:right; color:var(--gold)'>" + thb(s.vat) + "</td>" +
       "<td style='text-align:right; font-weight:700; color:var(--red)'>" + thb(total) + "</td>" +
-      "<td><button class='confirm-btn' onclick=\"confirmAllForOwner('" + owner.replace(/'/g,"\\'") + "')\">คืนเงินแล้วทั้งหมด</button></td>" +
+      "<td><button class='confirm-btn' data-owner='" + esc(owner) + "'>คืนเงินแล้วทั้งหมด</button></td>" +
       "</tr>";
   }).join("");
 }
@@ -1613,7 +1810,7 @@ function confirmAllForOwner(owner){
   const matching = getFilteredReimburseRows_().filter(r => (r.owner || "(ไม่ระบุชื่อ)") === owner);
   if(matching.length === 0) return;
 
-  const total = matching.reduce((s,r) => s + r.amount + (r.vat||0), 0);
+  const total = matching.reduce((s,r) => s + r.amount, 0); // Amount รวม VAT อยู่แล้ว
   const ok = confirm("ยืนยันว่าคืนเงินให้ " + owner + " ครบทั้ง " + matching.length + " รายการแล้วใช่ไหม?\nยอดรวม " + thb(total) + " บาท");
   if(!ok) return;
 
@@ -1639,6 +1836,121 @@ function confirmAllForOwner(owner){
     note.style.color = "var(--green)";
     note.style.borderColor = "var(--green)";
     note.textContent = "ส่งคำขอคืนเงินให้ " + owner + " ทั้ง " + matching.length + " รายการแล้ว (ลองรีเฟรชข้อมูลอีกครั้งเพื่อยืนยันว่า Sheet อัปเดตครบ)";
+  }
+}
+
+// ===================== สรุปยอดค้างรับตามคน (เครดิตค้างรับ) — คู่กับฝั่งค้างจ่ายด้านบน =====================
+function getFilteredReceiveRows_(){
+  const fromVal = document.getElementById("receiveDateFrom").value;
+  const toVal = document.getElementById("receiveDateTo").value;
+  const from = fromVal ? parseDateInputLocal_(fromVal) : null;
+  const to = toVal ? parseDateInputLocal_(toVal) : null;
+  if(to) to.setHours(23,59,59,999);
+
+  return allRows.filter(r => {
+    if(r.method !== "เครดิต" || r.type !== "รายได้") return false;
+    if(from && (!r.date || r.date < from)) return false;
+    if(to && (!r.date || r.date > to)) return false;
+    return true;
+  });
+}
+
+function clearReceiveDateFilter_(){
+  document.getElementById("receiveDateFrom").value = "";
+  document.getElementById("receiveDateTo").value = "";
+  renderReceivableSummary_();
+}
+
+document.getElementById("receiveDateFrom").addEventListener("change", renderReceivableSummary_);
+document.getElementById("receiveDateTo").addEventListener("change", renderReceivableSummary_);
+
+function renderReceivableSummary_(){
+  const tbody = document.getElementById("receiveBody");
+  const emptyNote = document.getElementById("receiveEmptyNote");
+  const chartWrap = document.getElementById("receiveChartWrap");
+  if(!tbody) return;
+
+  const receivable = getFilteredReceiveRows_();
+
+  if(receivable.length === 0){
+    tbody.innerHTML = "";
+    emptyNote.style.display = "block";
+    if(chartWrap) chartWrap.style.display = "none";
+    if(receiveChart){ receiveChart.destroy(); receiveChart = null; }
+    return;
+  }
+  emptyNote.style.display = "none";
+  if(chartWrap) chartWrap.style.display = "block";
+
+  const byOwner = {};
+  receivable.forEach(r => {
+    const owner = r.owner || "(ไม่ระบุชื่อ)";
+    if(!byOwner[owner]) byOwner[owner] = { count:0, amount:0, vat:0 };
+    byOwner[owner].count += 1;
+    byOwner[owner].amount += r.amount;
+    byOwner[owner].vat += (r.vat || 0);
+  });
+
+  const owners = Object.keys(byOwner).sort((a,b) => byOwner[b].amount - byOwner[a].amount);
+
+  if(receiveChart) receiveChart.destroy();
+  receiveChart = new Chart(document.getElementById("receiveChart"), {
+    type: "bar",
+    data: {
+      labels: owners,
+      datasets: [{ data: owners.map(o => byOwner[o].amount), backgroundColor: "#2D6A4F", borderRadius: 4 }]
+    },
+    options: {
+      indexAxis: "y", responsive:true, maintainAspectRatio:false,
+      scales:{ x:{ ticks:{ callback:v=>(v/1000)+"k" } } },
+      plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label: ctx => "ยอดรับรวม " + thb(ctx.raw) } } }
+    }
+  });
+
+  tbody.innerHTML = owners.map(owner => {
+    const s = byOwner[owner];
+    const total = s.amount; // Amount รวม VAT อยู่แล้ว ไม่ต้องบวกซ้ำ
+    return "<tr>" +
+      "<td style='font-weight:600'>" + esc(owner) + "</td>" +
+      "<td style='text-align:right'>" + s.count + "</td>" +
+      "<td style='text-align:right'>" + thb(s.amount) + "</td>" +
+      "<td style='text-align:right; color:var(--gold)'>" + thb(s.vat) + "</td>" +
+      "<td style='text-align:right; font-weight:700; color:var(--green)'>" + thb(total) + "</td>" +
+      "<td><button class='confirm-btn' data-owner='" + esc(owner) + "'>รับเงินแล้วทั้งหมด</button></td>" +
+      "</tr>";
+  }).join("");
+}
+
+function confirmAllReceivableForOwner(owner){
+  const matching = getFilteredReceiveRows_().filter(r => (r.owner || "(ไม่ระบุชื่อ)") === owner);
+  if(matching.length === 0) return;
+
+  const total = matching.reduce((s,r) => s + r.amount, 0); // Amount รวม VAT อยู่แล้ว
+  const ok = confirm("ยืนยันว่าได้รับเงินจาก " + owner + " ครบทั้ง " + matching.length + " รายการแล้วใช่ไหม?\nยอดรวม " + thb(total) + " บาท");
+  if(!ok) return;
+
+  matching.forEach(r => {
+    r.method = "เงินสด";
+    confirmedKeys.add(r.key);
+    if(WEBHOOK_URL){
+      fetch(WEBHOOK_URL, {
+        method: "POST",
+        mode: "no-cors",
+        body: JSON.stringify({ key: r.key, action: "confirm_received", confirmedBy: currentUser || "ไม่ระบุชื่อ" })
+      });
+    }
+  });
+
+  renderReceivableSummary_();
+  applyFiltersAndRender();
+
+  const note = document.getElementById("syncNote");
+  if(note){
+    note.style.display = "block";
+    note.style.background = "var(--green-l)";
+    note.style.color = "var(--green)";
+    note.style.borderColor = "var(--green)";
+    note.textContent = "ส่งคำขอรับเงินจาก " + owner + " ทั้ง " + matching.length + " รายการแล้ว (ลองรีเฟรชข้อมูลอีกครั้งเพื่อยืนยันว่า Sheet อัปเดตครบ)";
   }
 }
 
@@ -1726,7 +2038,14 @@ function loadData(){
         discount: parseMoney(r["discount"]),
         vat: parseMoney(r["VAT"]),
         vatCheck: String(r["Vat Check"] || "").trim().toUpperCase() === "TRUE",
-        vatCheck: String(r["Vat Check"] || "").trim().toUpperCase() === "TRUE",
+        // Confirm VAT ใน Sheet มี 3 สถานะจริง: TRUE / FALSE / ว่าง (ยังไม่ตรวจ)
+        // เก็บเป็น true / false / null เพื่อไม่ยุบ "ว่าง" ให้กลายเป็น FALSE โดยไม่ตั้งใจ
+        confirmVat: (function(v){
+          const s = String(v === undefined || v === null ? "" : v).trim().toUpperCase();
+          if(s === "TRUE") return true;
+          if(s === "FALSE") return false;
+          return null;
+        })(r["Confirm VAT"]),
         method: (r["Transaction Type"] || "-").trim(),
         term: r["Term Credit"] || "-",
         branch: r["Branch"] || "-",
@@ -1744,6 +2063,7 @@ function loadData(){
       populateSearchDropdowns_();
       applyFiltersAndRender();
       renderReimbursementSummary_();
+      renderReceivableSummary_();
     })
     .catch(e => {
       const box = document.getElementById("errorBox");
@@ -1898,7 +2218,7 @@ function render(rows, excludedNoDate){
     const marginBg = s.margin >= 0 ? "var(--green-l)" : "var(--red-l)";
     return "<div class='biz-card' style='--accent:" + color + "'>" +
       "<div class='biz-card-head'>" +
-        "<span class='biz-name'>" + biz + "</span>" +
+        "<span class='biz-name'>" + esc(biz) + "</span>" +
         "<span class='biz-margin-badge' style='background:" + marginBg + ";color:" + marginColor + "'>อัตรากำไร " + s.margin.toFixed(1) + "%</span>" +
       "</div>" +
       "<div class='biz-stats'>" +
@@ -2021,7 +2341,7 @@ function render(rows, excludedNoDate){
       const sign = r.type === "รายจ่าย" ? "-" : "+";
       const methodCls = r.method === "เครดิต" ? "credit" : "cash";
 
-      let incomingCell = r.incomingRaw;
+      let incomingCell = esc(r.incomingRaw);
       let statusCell = "-";
       const confirmLabel = r.type === "รายได้" ? "ยืนยันรับเงินแล้ว" : "ยืนยันจ่ายเงินแล้ว";
       const confirmedLabel = r.type === "รายได้" ? "รับเงินแล้ว" : "จ่ายเงินแล้ว";
@@ -2030,10 +2350,10 @@ function render(rows, excludedNoDate){
           const due = new Date(r.incomingDate); due.setHours(0,0,0,0);
           if(due < today){
             incomingCell += "<span class='due-tag overdue'>เลยกำหนด</span>";
-            statusCell = "<button class='confirm-btn' onclick=\"confirmReceived('" + r.key + "')\">" + confirmLabel + "</button>";
+            statusCell = "<button class='confirm-btn' data-confirm-key='" + esc(r.key) + "'>" + confirmLabel + "</button>";
           } else if(due.getTime() === today.getTime()){
             incomingCell += "<span class='due-tag today'>ถึงกำหนดวันนี้</span>";
-            statusCell = "<button class='confirm-btn' onclick=\"confirmReceived('" + r.key + "')\">" + confirmLabel + "</button>";
+            statusCell = "<button class='confirm-btn' data-confirm-key='" + esc(r.key) + "'>" + confirmLabel + "</button>";
           } else {
             statusCell = "<span style='color:#8a8878'>รอครบกำหนด</span>";
           }
@@ -2042,25 +2362,25 @@ function render(rows, excludedNoDate){
         }
       } else if(confirmedKeys.has(r.key)){
         const byName = currentUser || r.confirmedBy;
-        statusCell = "<span class='confirmed-tag'>&#10003; " + confirmedLabel + (byName ? " (" + byName + ")" : "") + "</span>";
+        statusCell = "<span class='confirmed-tag'>&#10003; " + confirmedLabel + (byName ? " (" + esc(byName) + ")" : "") + "</span>";
       } else if(r.confirmedBy){
-        statusCell = "<span class='confirmed-tag'>&#10003; โดย " + r.confirmedBy + "</span>";
+        statusCell = "<span class='confirmed-tag'>&#10003; โดย " + esc(r.confirmedBy) + "</span>";
       }
 
-      return "<tr onclick=\"openDetail('" + r.key + "')\">" +
-        "<td>" + r.dateRaw + "</td>" +
-        "<td>" + r.product + "</td>" +
-        "<td style='color:#6b6a63'>" + r.productDetail + "</td>" +
-        "<td><span class='badge " + typeCls + "'>" + r.type + "</span></td>" +
-        "<td>" + r.category + "</td>" +
-        "<td style='color:#6b6a63'>" + r.desc + "</td>" +
+      return "<tr data-key='" + esc(r.key) + "'>" +
+        "<td>" + esc(r.dateRaw) + "</td>" +
+        "<td>" + esc(r.product) + "</td>" +
+        "<td class='col-hide-sm' style='color:#6b6a63'>" + esc(r.productDetail) + "</td>" +
+        "<td><span class='badge " + typeCls + "'>" + esc(r.type) + "</span></td>" +
+        "<td class='col-hide-sm'>" + esc(r.category) + "</td>" +
+        "<td class='col-hide-sm' style='color:#6b6a63'>" + esc(r.desc) + "</td>" +
         "<td style='text-align:right;font-weight:600;color:" + (r.type === "รายได้" ? "#2D6A4F" : "#9A3B2E") + "'>" + sign + thb(r.amount) + "</td>" +
-        "<td style='text-align:right;color:#6b6a63'>" + (r.vat ? thb(r.vat) : "-") + "</td>" +
-        "<td><span class='badge " + methodCls + "'>" + r.method + "</span></td>" +
-        "<td>" + incomingCell + "</td>" +
-        "<td>" + r.branch + "</td>" +
-        "<td>" + r.owner + "</td>" +
-        "<td onclick=\"event.stopPropagation()\">" + statusCell + "</td>" +
+        "<td class='col-hide-sm' style='text-align:right;color:#6b6a63'>" + (r.vat ? thb(r.vat) : "-") + "</td>" +
+        "<td><span class='badge " + methodCls + "'>" + esc(r.method) + "</span></td>" +
+        "<td class='col-hide-sm'>" + incomingCell + "</td>" +
+        "<td class='col-hide-sm'>" + esc(r.branch) + "</td>" +
+        "<td class='col-hide-sm'>" + esc(r.owner) + "</td>" +
+        "<td data-no-detail='1'>" + statusCell + "</td>" +
         "</tr>";
     }).join("");
   }
@@ -2136,7 +2456,7 @@ function buildReportElement_(){
   let html = "";
   html += "<div style='font-family:\"Noto Serif Thai\",serif; font-size:11px; letter-spacing:.1em; color:#B98A2E; font-weight:600; margin-bottom:4px;'>สมุดบัญชี · รายงานสรุป</div>";
   html += "<h1 style='font-family:\"Noto Serif Thai\",serif; font-size:26px; margin:0 0 4px;'>รายรับ–รายจ่าย</h1>";
-  html += "<div style='font-size:12px; color:#6b6a63; margin-bottom:20px;'>สร้างเมื่อ " + new Date().toLocaleString("th-TH") + " · ช่วงวันที่: " + periodText + " · ธุรกิจ: " + bizText + " · การรับเงิน: " + methodText + "</div>";
+  html += "<div style='font-size:12px; color:#6b6a63; margin-bottom:20px;'>สร้างเมื่อ " + new Date().toLocaleString("th-TH") + " · ช่วงวันที่: " + esc(periodText) + " · ธุรกิจ: " + esc(bizText) + " · การรับเงิน: " + esc(methodText) + "</div>";
   html += "<div style='border-bottom:3px double #232821; margin-bottom:20px;'></div>";
 
   html += "<div style='display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:24px;'>";
@@ -2165,7 +2485,7 @@ function buildReportElement_(){
   businesses.forEach(biz => {
     const s = calcStats(rows.filter(r => r.product === biz));
     html += "<tr>" +
-      "<td style='padding:6px 8px; border-bottom:1px solid #D8D2C0; font-weight:600;'>" + biz + "</td>" +
+      "<td style='padding:6px 8px; border-bottom:1px solid #D8D2C0; font-weight:600;'>" + esc(biz) + "</td>" +
       "<td style='padding:6px 8px; border-bottom:1px solid #D8D2C0; color:#2D6A4F;'>" + thb(s.income) + "</td>" +
       "<td style='padding:6px 8px; border-bottom:1px solid #D8D2C0; color:#9A3B2E;'>" + thb(s.expense) + "</td>" +
       "<td style='padding:6px 8px; border-bottom:1px solid #D8D2C0; font-weight:600;'>" + thb(s.net) + "</td>" +
@@ -2187,13 +2507,13 @@ function buildReportElement_(){
     const color = r.type === "รายได้" ? "#2D6A4F" : "#9A3B2E";
     const sign = r.type === "รายจ่าย" ? "-" : "+";
     html += "<tr>" +
-      "<td style='padding:5px 6px; border-bottom:1px solid #D8D2C0;'>" + r.dateRaw + "</td>" +
-      "<td style='padding:5px 6px; border-bottom:1px solid #D8D2C0;'>" + r.product + "</td>" +
-      "<td style='padding:5px 6px; border-bottom:1px solid #D8D2C0;'>" + r.type + "</td>" +
-      "<td style='padding:5px 6px; border-bottom:1px solid #D8D2C0;'>" + r.category + "</td>" +
-      "<td style='padding:5px 6px; border-bottom:1px solid #D8D2C0; color:#6b6a63;'>" + (r.desc || "-") + "</td>" +
+      "<td style='padding:5px 6px; border-bottom:1px solid #D8D2C0;'>" + esc(r.dateRaw) + "</td>" +
+      "<td style='padding:5px 6px; border-bottom:1px solid #D8D2C0;'>" + esc(r.product) + "</td>" +
+      "<td style='padding:5px 6px; border-bottom:1px solid #D8D2C0;'>" + esc(r.type) + "</td>" +
+      "<td style='padding:5px 6px; border-bottom:1px solid #D8D2C0;'>" + esc(r.category) + "</td>" +
+      "<td style='padding:5px 6px; border-bottom:1px solid #D8D2C0; color:#6b6a63;'>" + (esc(r.desc) || "-") + "</td>" +
       "<td style='padding:5px 6px; border-bottom:1px solid #D8D2C0; color:" + color + "; font-weight:600;'>" + sign + thb(r.amount) + "</td>" +
-      "<td style='padding:5px 6px; border-bottom:1px solid #D8D2C0;'>" + r.method + "</td>" +
+      "<td style='padding:5px 6px; border-bottom:1px solid #D8D2C0;'>" + esc(r.method) + "</td>" +
       "</tr>";
   });
   html += "</table>";
@@ -2222,14 +2542,12 @@ function attemptLogin(){
   loadData();
 }
 
-// ตั้งค่าเริ่มต้นให้แดชบอร์ดแสดงข้อมูลเฉพาะเดือนปัจจุบัน (ตั้งแต่วันที่ 1 ถึงวันนี้)
+// ตั้งค่าเริ่มต้นให้แดชบอร์ดแสดงข้อมูลเฉพาะเดือนปัจจุบัน (ทั้งเดือน ไม่ตัดที่วันนี้)
 function setDefaultDateRangeToCurrentMonth_(){
   var now = new Date();
-  var firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
-  var toStr = fmtDateInput_(now);
-  var fromStr = fmtDateInput_(firstDay);
-  document.getElementById("dateFrom").value = fromStr;
-  document.getElementById("dateTo").value = toStr;
+  var monthVal = now.getFullYear() + "-" + String(now.getMonth()+1).padStart(2,"0");
+  document.getElementById("dashboardMonthInput").value = monthVal;
+  syncMonthInputToDateRange_(monthVal);
 }
 function fmtDateInput_(d){
   var y = d.getFullYear();
