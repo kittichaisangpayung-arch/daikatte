@@ -401,7 +401,7 @@
           <thead>
             <tr>
               <th>วันที่</th><th>สินค้า</th><th class="col-hide-sm">รายละเอียดสินค้า</th><th>ประเภท</th><th class="col-hide-sm">หมวดหมู่</th><th class="col-hide-sm">รายละเอียด</th>
-              <th style="text-align:right">จำนวนเงิน</th><th class="col-hide-sm">การรับเงิน</th><th class="col-hide-sm">Confirm VAT</th><th class="col-hide-sm">สาขา</th><th class="col-hide-sm">ผู้รับผิดชอบ</th>
+              <th style="text-align:right">จำนวนเงิน</th><th style="text-align:right" class="col-hide-sm">VAT</th><th class="col-hide-sm">การรับเงิน</th><th class="col-hide-sm">Confirm VAT</th><th class="col-hide-sm">สาขา</th><th class="col-hide-sm">ผู้รับผิดชอบ</th>
             </tr>
           </thead>
           <tbody id="searchResultsBody"></tbody>
@@ -1658,6 +1658,7 @@ function renderSearchResults_(){
       "<td class='col-hide-sm'>" + esc(r.category) + "</td>" +
       "<td class='col-hide-sm' style='color:#6b6a63'>" + (esc(r.desc) || "-") + "</td>" +
       "<td style='text-align:right;font-weight:600;color:" + (r.type === "รายได้" ? "#2D6A4F" : "#9A3B2E") + "'>" + sign + thb(r.amount) + "</td>" +
+      "<td class='col-hide-sm' style='text-align:right;color:#6b6a63'>" + (r.vat ? thb(r.vat) : "-") + "</td>" +
       "<td class='col-hide-sm'>" + esc(r.method) + "</td>" +
       "<td class='col-hide-sm'>" + confirmVatCellHtml_(r.confirmVat) + "</td>" +
       "<td class='col-hide-sm'>" + esc(r.branch) + "</td>" +
