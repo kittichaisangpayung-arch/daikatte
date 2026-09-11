@@ -581,13 +581,13 @@
     </div>
 
     <div class="chart-box" style="margin-bottom:24px;">
-      <div class="chart-title">Top 10 รายละเอียดสินค้าที่ทำกำไรสูงสุด (Product Detail)</div>
-      <div style="position:relative;height:320px; margin-bottom:14px;">
-        <canvas id="reportProductDetailChart" role="img" aria-label="กราฟแท่งรายรับรายจ่ายกำไรแยกตามรายละเอียดสินค้า"></canvas>
+      <div class="chart-title">อัตรากำไรแยกตามรายละเอียดสินค้า (Product Detail)</div>
+      <div style="position:relative;height:280px; margin-bottom:14px;">
+        <canvas id="reportProductDetailChart" role="img" aria-label="กราฟแท่งอัตรากำไรแยกตามรายละเอียดสินค้า"></canvas>
       </div>
       <div style="overflow-x:auto;">
         <table>
-          <thead><tr><th>รายละเอียดสินค้า</th><th style="text-align:right">จำนวนรายการ</th><th style="text-align:right">รายรับ</th><th style="text-align:right">รายจ่าย</th><th style="text-align:right">กำไรสุทธิ</th><th style="text-align:right">อัตรากำไร</th></tr></thead>
+          <thead><tr><th>รายละเอียดสินค้า</th><th style="text-align:right">รายรับ</th><th style="text-align:right">รายจ่าย</th><th style="text-align:right">กำไรสุทธิ</th><th style="text-align:right">อัตรากำไร</th></tr></thead>
           <tbody id="reportProductDetailBody"></tbody>
         </table>
       </div>
@@ -795,7 +795,7 @@ const THAI_MONTHS_SHORT = ["ม.ค.","ก.พ.","มี.ค.","เม.ย.","�
 let allRows = [];
 let branchChart, categoryChart, trendChart;
 let topIncomeChart, topExpenseChart, yoyChart;
-let reportIncomeCatChart, reportExpenseCatChart, reportBranchChart, reportCompareChart, reportProductDetailChart, reportOwnerChart, reportMethodChart, reportVatCheckChart;
+let reportIncomeCatChart, reportExpenseCatChart, reportBranchChart, reportCompareChart, reportProductDetailChart;
 let reimburseChart, receiveChart, searchTypeChart, searchCatChart;
 let a_activeBiz = "all";
 let activeBiz = "all";
@@ -1364,14 +1364,12 @@ function renderMonthlyReport_(){
       plugins:{ legend:{ position:"top", labels:{boxWidth:10,font:{size:12}} }, tooltip:{ callbacks:{ label: ctx => ctx.dataset.label + ": " + thb(ctx.raw) } } } }
   });
 
-  // ---- อัตรากำไรแยกตามรายละเอียดสินค้า (Product Detail) - แสดงเฉพาะ Top 10 ----
+  // ---- อัตรากำไรแยกตามรายละเอียดสินค้า (Product Detail) ----
   const byProductDetail = {};
   rows.forEach(r => {
     const detail = r.productDetail && r.productDetail !== "-" ? r.productDetail : "(ไม่ระบุ)";
-    if(!byProductDetail[detail]) byProductDetail[detail] = {income:0, expense:0, count:0};
-    if(r.type === "รายได้") byProductDetail[detail].income += r.amount;
-    else byProductDetail[detail].expense += r.amount;
-    byProductDetail[detail].count += 1;
+    if(!byProductDetail[detail]) byProductDetail[detail] = {income:0, expense:0};
+    if(r.type === "รายได้") byProductDetail[detail].income += r.amount; else byProductDetail[detail].expense += r.amount;
   });
   const productDetailEntries = Object.entries(byProductDetail)
     .map(([detail, s]) => {
@@ -1381,14 +1379,11 @@ function renderMonthlyReport_(){
     })
     .sort((a,b) => b[2] - a[2]); // เรียงตามกำไรสุทธิมากไปน้อย
 
-  const top10ProductDetails = productDetailEntries.slice(0, 10);
-
   document.getElementById("reportProductDetailBody").innerHTML = productDetailEntries.length === 0
-    ? "<tr><td colspan='6' style='text-align:center;color:#8a8878;'>ไม่มีข้อมูล</td></tr>"
-    : top10ProductDetails.map(([detail, s, net, margin]) => {
+    ? "<tr><td colspan='5' style='text-align:center;color:#8a8878;'>ไม่มีข้อมูล</td></tr>"
+    : productDetailEntries.map(([detail, s, net, margin]) => {
         const marginColor = margin >= 0 ? "var(--green)" : "var(--red)";
         return "<tr><td>" + esc(detail) + "</td>" +
-          "<td style='text-align:right;color:#8a8878'>" + s.count + "</td>" +
           "<td style='text-align:right;color:var(--green)'>" + thb(s.income) + "</td>" +
           "<td style='text-align:right;color:var(--red)'>" + thb(s.expense) + "</td>" +
           "<td style='text-align:right;font-weight:700;color:" + (net>=0?"var(--green)":"var(--red)") + "'>" + thb(net) + "</td>" +
@@ -1399,11 +1394,9 @@ function renderMonthlyReport_(){
   reportProductDetailChart = new Chart(document.getElementById("reportProductDetailChart"), {
     type: "bar",
     data: {
-      labels: top10ProductDetails.map(e => e[0]),
+      labels: productDetailEntries.map(e => e[0]),
       datasets: [
-        { label:"รายรับ", data: top10ProductDetails.map(e => e[1].income), backgroundColor:"#2D6A4F", borderRadius:4 },
-        { label:"รายจ่าย", data: top10ProductDetails.map(e => e[1].expense), backgroundColor:"#9A3B2E", borderRadius:4 },
-        { label:"กำไรสุทธิ", data: top10ProductDetails.map(e => e[2]), backgroundColor:"#B98A2E", borderRadius:4 }
+        { label:"อัตรากำไร (%)", data: productDetailEntries.map(e => e[3]), backgroundColor:"#3E5C78", borderRadius:4 }
       ]
     },
     options: {
@@ -1412,117 +1405,13 @@ function renderMonthlyReport_(){
       indexAxis: 'y',
       scales:{
         x:{
-          ticks:{ callback:v => (v/1000) + "k" },
-          title: { display: true, text: 'จำนวนเงิน (บาท)' }
+          ticks:{ callback:v => v.toFixed(1) + "%" },
+          title: { display: true, text: 'อัตรากำไร (%)' }
         }
       },
       plugins:{
-        legend:{ position:"top", labels:{boxWidth:10,font:{size:11}} },
-        tooltip:{ callbacks:{ label: ctx => ctx.dataset.label + ": " + thb(ctx.raw) } }
-      }
-    }
-  });
-
-  // ---- วิเคราะห์ผู้รับผิดชอบ (Owner Performance) ----
-  const byOwner = {};
-  rows.forEach(r => {
-    const owner = r.owner && r.owner !== "-" ? r.owner : "(ไม่ระบุ)";
-    if(!byOwner[owner]) byOwner[owner] = {income:0, expense:0, count:0};
-    if(r.type === "รายได้") byOwner[owner].income += r.amount;
-    else byOwner[owner].expense += r.amount;
-    byOwner[owner].count += 1;
-  });
-  const ownerEntries = Object.entries(byOwner)
-    .map(([owner, s]) => {
-      const net = s.income - s.expense;
-      const margin = s.income > 0 ? (net / s.income * 100) : 0;
-      return [owner, s, net, margin];
-    })
-    .sort((a,b) => b[2] - a[2]); // เรียงตามกำไรสุทธิ
-
-  document.getElementById("reportOwnerBody").innerHTML = ownerEntries.length === 0
-    ? "<tr><td colspan='6' style='text-align:center;color:#8a8878;'>ไม่มีข้อมูล</td></tr>"
-    : ownerEntries.map(([owner, s, net, margin]) => {
-        const marginColor = margin >= 0 ? "var(--green)" : "var(--red)";
-        return "<tr><td>" + esc(owner) + "</td>" +
-          "<td style='text-align:right;color:#8a8878'>" + s.count + "</td>" +
-          "<td style='text-align:right;color:var(--green)'>" + thb(s.income) + "</td>" +
-          "<td style='text-align:right;color:var(--red)'>" + thb(s.expense) + "</td>" +
-          "<td style='text-align:right;font-weight:700;color:" + (net>=0?"var(--green)":"var(--red)") + "'>" + thb(net) + "</td>" +
-          "<td style='text-align:right;font-weight:700;color:" + marginColor + "'>" + margin.toFixed(1) + "%</td></tr>";
-      }).join("");
-
-  if(reportOwnerChart) reportOwnerChart.destroy();
-  reportOwnerChart = new Chart(document.getElementById("reportOwnerChart"), {
-    type: "bar",
-    data: {
-      labels: ownerEntries.map(e => e[0]),
-      datasets: [
-        { label:"รายรับ", data: ownerEntries.map(e => e[1].income), backgroundColor:"#2D6A4F", borderRadius:4 },
-        { label:"รายจ่าย", data: ownerEntries.map(e => e[1].expense), backgroundColor:"#9A3B2E", borderRadius:4 }
-      ]
-    },
-    options: {
-      responsive:true,
-      maintainAspectRatio:false,
-      scales:{ y:{ ticks:{ callback:v => (v/1000) + "k" } } },
-      plugins:{
-        legend:{ position:"top", labels:{boxWidth:10,font:{size:11}} },
-        tooltip:{ callbacks:{ label: ctx => ctx.dataset.label + ": " + thb(ctx.raw) } }
-      }
-    }
-  });
-
-  // ---- การรับเงิน (เงินสด vs เครดิต) ----
-  const byCash = rows.filter(r => r.method === "เงินสด").reduce((s,r)=>s+r.amount,0);
-  const byCredit = rows.filter(r => r.method === "เครดิต").reduce((s,r)=>s+r.amount,0);
-  const cashCount = rows.filter(r => r.method === "เงินสด").length;
-  const creditCount = rows.filter(r => r.method === "เครดิต").length;
-
-  document.getElementById("reportMethodSummary").innerHTML =
-    "เงินสด: " + thb(byCash) + " (" + cashCount + " รายการ)<br>" +
-    "เครดิต: " + thb(byCredit) + " (" + creditCount + " รายการ)";
-
-  if(reportMethodChart) reportMethodChart.destroy();
-  reportMethodChart = new Chart(document.getElementById("reportMethodChart"), {
-    type: "doughnut",
-    data: {
-      labels: ["เงินสด", "เครดิต"],
-      datasets: [{ data: [byCash, byCredit], backgroundColor: ["#B98A2E", "#3E5C78"] }]
-    },
-    options: {
-      responsive:true,
-      maintainAspectRatio:false,
-      plugins:{
-        legend:{ position:"bottom", labels:{boxWidth:10,font:{size:11}} },
-        tooltip:{ callbacks:{ label: ctx => ctx.label + ": " + thb(ctx.raw) } }
-      }
-    }
-  });
-
-  // ---- สินค้าที่มี VAT vs ไม่มี VAT ----
-  const withVat = rows.filter(r => r.vatCheck).reduce((s,r)=>s+r.amount,0);
-  const withoutVat = rows.filter(r => !r.vatCheck).reduce((s,r)=>s+r.amount,0);
-  const withVatCount = rows.filter(r => r.vatCheck).length;
-  const withoutVatCount = rows.filter(r => !r.vatCheck).length;
-
-  document.getElementById("reportVatCheckSummary").innerHTML =
-    "มี VAT: " + thb(withVat) + " (" + withVatCount + " รายการ)<br>" +
-    "ไม่มี VAT: " + thb(withoutVat) + " (" + withoutVatCount + " รายการ)";
-
-  if(reportVatCheckChart) reportVatCheckChart.destroy();
-  reportVatCheckChart = new Chart(document.getElementById("reportVatCheckChart"), {
-    type: "doughnut",
-    data: {
-      labels: ["มี VAT", "ไม่มี VAT"],
-      datasets: [{ data: [withVat, withoutVat], backgroundColor: ["#2D6A4F", "#9A3B2E"] }]
-    },
-    options: {
-      responsive:true,
-      maintainAspectRatio:false,
-      plugins:{
-        legend:{ position:"bottom", labels:{boxWidth:10,font:{size:11}} },
-        tooltip:{ callbacks:{ label: ctx => ctx.label + ": " + thb(ctx.raw) } }
+        legend:{ display: false },
+        tooltip:{ callbacks:{ label: ctx => "อัตรากำไร: " + ctx.raw.toFixed(1) + "%" } }
       }
     }
   });
