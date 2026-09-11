@@ -581,6 +581,19 @@
     </div>
 
     <div class="chart-box" style="margin-bottom:24px;">
+      <div class="chart-title">อัตรากำไรแยกตามรายละเอียดสินค้า (Product Detail)</div>
+      <div style="position:relative;height:280px; margin-bottom:14px;">
+        <canvas id="reportProductDetailChart" role="img" aria-label="กราฟแท่งอัตรากำไรแยกตามรายละเอียดสินค้า"></canvas>
+      </div>
+      <div style="overflow-x:auto;">
+        <table>
+          <thead><tr><th>รายละเอียดสินค้า</th><th style="text-align:right">รายรับ</th><th style="text-align:right">รายจ่าย</th><th style="text-align:right">กำไรสุทธิ</th><th style="text-align:right">อัตรากำไร</th></tr></thead>
+          <tbody id="reportProductDetailBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="chart-box" style="margin-bottom:24px;">
       <div class="chart-title">เทียบกับเดือนก่อนหน้า</div>
       <div style="position:relative;height:220px; margin-bottom:14px;">
         <canvas id="reportCompareChart" role="img" aria-label="กราฟแท่งเทียบรายรับ รายจ่าย กำไรสุทธิ กับเดือนก่อนหน้า"></canvas>
@@ -782,7 +795,7 @@ const THAI_MONTHS_SHORT = ["ม.ค.","ก.พ.","มี.ค.","เม.ย.","�
 let allRows = [];
 let branchChart, categoryChart, trendChart;
 let topIncomeChart, topExpenseChart, yoyChart;
-let reportIncomeCatChart, reportExpenseCatChart, reportBranchChart, reportCompareChart;
+let reportIncomeCatChart, reportExpenseCatChart, reportBranchChart, reportCompareChart, reportProductDetailChart;
 let reimburseChart, receiveChart, searchTypeChart, searchCatChart;
 let a_activeBiz = "all";
 let activeBiz = "all";
@@ -1349,6 +1362,58 @@ function renderMonthlyReport_(){
     options: { responsive:true, maintainAspectRatio:false,
       scales:{ y:{ ticks:{ callback:v=>(v/1000)+"k" } } },
       plugins:{ legend:{ position:"top", labels:{boxWidth:10,font:{size:12}} }, tooltip:{ callbacks:{ label: ctx => ctx.dataset.label + ": " + thb(ctx.raw) } } } }
+  });
+
+  // ---- อัตรากำไรแยกตามรายละเอียดสินค้า (Product Detail) ----
+  const byProductDetail = {};
+  rows.forEach(r => {
+    const detail = r.productDetail && r.productDetail !== "-" ? r.productDetail : "(ไม่ระบุ)";
+    if(!byProductDetail[detail]) byProductDetail[detail] = {income:0, expense:0};
+    if(r.type === "รายได้") byProductDetail[detail].income += r.amount; else byProductDetail[detail].expense += r.amount;
+  });
+  const productDetailEntries = Object.entries(byProductDetail)
+    .map(([detail, s]) => {
+      const net = s.income - s.expense;
+      const margin = s.income > 0 ? (net / s.income * 100) : 0;
+      return [detail, s, net, margin];
+    })
+    .sort((a,b) => b[2] - a[2]); // เรียงตามกำไรสุทธิมากไปน้อย
+
+  document.getElementById("reportProductDetailBody").innerHTML = productDetailEntries.length === 0
+    ? "<tr><td colspan='5' style='text-align:center;color:#8a8878;'>ไม่มีข้อมูล</td></tr>"
+    : productDetailEntries.map(([detail, s, net, margin]) => {
+        const marginColor = margin >= 0 ? "var(--green)" : "var(--red)";
+        return "<tr><td>" + esc(detail) + "</td>" +
+          "<td style='text-align:right;color:var(--green)'>" + thb(s.income) + "</td>" +
+          "<td style='text-align:right;color:var(--red)'>" + thb(s.expense) + "</td>" +
+          "<td style='text-align:right;font-weight:700;color:" + (net>=0?"var(--green)":"var(--red)") + "'>" + thb(net) + "</td>" +
+          "<td style='text-align:right;font-weight:700;color:" + marginColor + "'>" + margin.toFixed(1) + "%</td></tr>";
+      }).join("");
+
+  if(reportProductDetailChart) reportProductDetailChart.destroy();
+  reportProductDetailChart = new Chart(document.getElementById("reportProductDetailChart"), {
+    type: "bar",
+    data: {
+      labels: productDetailEntries.map(e => e[0]),
+      datasets: [
+        { label:"อัตรากำไร (%)", data: productDetailEntries.map(e => e[3]), backgroundColor:"#3E5C78", borderRadius:4 }
+      ]
+    },
+    options: {
+      responsive:true,
+      maintainAspectRatio:false,
+      indexAxis: 'y',
+      scales:{
+        x:{
+          ticks:{ callback:v => v.toFixed(1) + "%" },
+          title: { display: true, text: 'อัตรากำไร (%)' }
+        }
+      },
+      plugins:{
+        legend:{ display: false },
+        tooltip:{ callbacks:{ label: ctx => "อัตรากำไร: " + ctx.raw.toFixed(1) + "%" } }
+      }
+    }
   });
 
   // ---- เทียบเดือนก่อนหน้า ----
