@@ -2286,7 +2286,7 @@ function renderMoM_(){
 
   const pctOf = (curVal, prevVal) => {
     if(prevVal === 0) return curVal === 0 ? 0 : null;
-    return ((curVal - prevVal) / Math.abs(prevVal)) * 100;
+    return ((curVal - prevVal) / prevVal) * 100;
   };
 
   document.getElementById("incomeMomBadge").innerHTML = momBadgeHtml_(pctOf(curStats.income, prevStats.income), false);
