@@ -1064,16 +1064,7 @@ function openProductDetailModal(monthDataStr){
 
 // Event delegation แทน inline onclick: ค่าที่มาจาก Sheet (key, ชื่อผู้รับผิดชอบ) ไม่ต้องถูกฝัง
 // เป็นโค้ด JS ใน attribute อีก จึงไม่พังเมื่อค่ามี ' " หรืออักขระพิเศษ และไม่เปิดช่องให้ inject
-document.getElementById("tableBody").addEventListener("click", (e) => {
-  const confirmBtn = e.target.closest("button[data-confirm-key]");
-  if(confirmBtn){
-    confirmReceived(confirmBtn.dataset.confirmKey);
-    return;
-  }
-  if(e.target.closest("[data-no-detail]")) return;
-  const tr = e.target.closest("tr[data-key]");
-  if(tr) openDetail(tr.dataset.key);
-});
+// tableBody ถูกลบออกจากหน้าแดชบอร์ดแล้ว
 
 document.getElementById("searchResultsBody").addEventListener("click", (e) => {
   const tr = e.target.closest("tr[data-key]");
@@ -2456,75 +2447,8 @@ function render(rows, excludedNoDate){
     }
   });
 
-  const tbody = document.getElementById("tableBody");
-  const emptyNote = document.getElementById("emptyNote");
-  const today = startOfToday();
-
-  const totalPages = Math.max(1, Math.ceil(rows.length / pageSize));
-  if(currentPage > totalPages) currentPage = totalPages;
-  if(currentPage < 1) currentPage = 1;
-  const pagedRows = rows.slice((currentPage - 1) * pageSize, currentPage * pageSize);
-
-  document.getElementById("paginationBar").style.display = rows.length === 0 ? "none" : "flex";
-  document.getElementById("paginationInfo").textContent = rows.length === 0 ? "" :
-    "แสดง " + ((currentPage - 1) * pageSize + 1) + "–" + Math.min(currentPage * pageSize, rows.length) + " จาก " + rows.length + " รายการ";
-  document.getElementById("pageIndicator").textContent = "หน้า " + currentPage + " / " + totalPages;
-  document.getElementById("prevPageBtn").disabled = currentPage <= 1;
-  document.getElementById("nextPageBtn").disabled = currentPage >= totalPages;
-
-  if(rows.length === 0){
-    tbody.innerHTML = "";
-    emptyNote.style.display = "block";
-  } else {
-    emptyNote.style.display = "none";
-    tbody.innerHTML = pagedRows.map(r => {
-      const typeCls = r.type === "รายได้" ? "income" : "expense";
-      const sign = r.type === "รายจ่าย" ? "-" : "+";
-      const methodCls = r.method === "เครดิต" ? "credit" : "cash";
-
-      let incomingCell = esc(r.incomingRaw);
-      let statusCell = "-";
-      const confirmLabel = r.type === "รายได้" ? "ยืนยันรับเงินแล้ว" : "ยืนยันจ่ายเงินแล้ว";
-      const confirmedLabel = r.type === "รายได้" ? "รับเงินแล้ว" : "จ่ายเงินแล้ว";
-      if(r.method === "เครดิต"){
-        if(r.incomingDate){
-          const due = new Date(r.incomingDate); due.setHours(0,0,0,0);
-          if(due < today){
-            incomingCell += "<span class='due-tag overdue'>เลยกำหนด</span>";
-            statusCell = "<button class='confirm-btn' data-confirm-key='" + esc(r.key) + "'>" + confirmLabel + "</button>";
-          } else if(due.getTime() === today.getTime()){
-            incomingCell += "<span class='due-tag today'>ถึงกำหนดวันนี้</span>";
-            statusCell = "<button class='confirm-btn' data-confirm-key='" + esc(r.key) + "'>" + confirmLabel + "</button>";
-          } else {
-            statusCell = "<span style='color:#8a8878'>รอครบกำหนด</span>";
-          }
-        } else {
-          statusCell = "<span style='color:#8a8878'>รอครบกำหนด</span>";
-        }
-      } else if(confirmedKeys.has(r.key)){
-        const byName = currentUser || r.confirmedBy;
-        statusCell = "<span class='confirmed-tag'>&#10003; " + confirmedLabel + (byName ? " (" + esc(byName) + ")" : "") + "</span>";
-      } else if(r.confirmedBy){
-        statusCell = "<span class='confirmed-tag'>&#10003; โดย " + esc(r.confirmedBy) + "</span>";
-      }
-
-      return "<tr data-key='" + esc(r.key) + "'>" +
-        "<td>" + esc(r.dateRaw) + "</td>" +
-        "<td>" + esc(r.product) + "</td>" +
-        "<td class='col-hide-sm' style='color:#6b6a63'>" + esc(r.productDetail) + "</td>" +
-        "<td><span class='badge " + typeCls + "'>" + esc(r.type) + "</span></td>" +
-        "<td class='col-hide-sm'>" + esc(r.category) + "</td>" +
-        "<td class='col-hide-sm' style='color:#6b6a63'>" + esc(r.desc) + "</td>" +
-        "<td style='text-align:right;font-weight:600;color:" + (r.type === "รายได้" ? "#2D6A4F" : "#9A3B2E") + "'>" + sign + thb(r.amount) + "</td>" +
-        "<td class='col-hide-sm' style='text-align:right;color:#6b6a63'>" + (r.vat ? thb(r.vat) : "-") + "</td>" +
-        "<td><span class='badge " + methodCls + "'>" + esc(r.method) + "</span></td>" +
-        "<td class='col-hide-sm'>" + incomingCell + "</td>" +
-        "<td class='col-hide-sm'>" + esc(r.branch) + "</td>" +
-        "<td class='col-hide-sm'>" + esc(r.owner) + "</td>" +
-        "<td data-no-detail='1'>" + statusCell + "</td>" +
-        "</tr>";
-    }).join("");
-  }
+  // ตาราง "รายการทั้งหมด" ถูกลบออกจากหน้าแดshboard แล้ว
+  // ไม่ต้องอัปเดต tableBody, emptyNote, และ pagination อีกต่อไป
 }
 
 async function exportPDF(){
