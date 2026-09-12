@@ -710,38 +710,6 @@
     </div>
   </div>
 
-  <div class="table-box">
-    <div class="chart-title">รายการทั้งหมด</div>
-    <div style="overflow-x:auto;">
-    <table class="tbl-main">
-      <thead>
-        <tr>
-          <th>วันที่</th><th>สินค้า</th><th class="col-hide-sm">รายละเอียดสินค้า</th><th>ประเภท</th><th class="col-hide-sm">หมวดหมู่</th><th class="col-hide-sm">รายละเอียด</th>
-          <th style="text-align:right">จำนวนเงิน</th><th style="text-align:right" class="col-hide-sm">VAT</th>
-          <th>การรับเงิน</th><th class="col-hide-sm">เงินจะเข้าวันที่</th><th class="col-hide-sm">สาขา</th><th class="col-hide-sm">ผู้รับผิดชอบ</th><th>สถานะ</th>
-        </tr>
-      </thead>
-      <tbody id="tableBody"></tbody>
-    </table>
-    </div>
-    <div class="empty-note" id="emptyNote" style="display:none;">ไม่มีรายการในช่วงที่เลือก</div>
-    <div class="pagination-bar" id="paginationBar">
-      <div class="pagination-info" id="paginationInfo"></div>
-      <div class="pagination-controls">
-        <select class="page-size-select" id="pageSizeSelect" onchange="changePageSize(this.value)">
-          <option value="10">10 แถว/หน้า</option>
-          <option value="15" selected>15 แถว/หน้า</option>
-          <option value="25">25 แถว/หน้า</option>
-          <option value="50">50 แถว/หน้า</option>
-        </select>
-        <button class="page-btn" id="prevPageBtn" onclick="changePage(-1)">‹ ก่อนหน้า</button>
-        <span class="pagination-info" id="pageIndicator"></span>
-        <button class="page-btn" id="nextPageBtn" onclick="changePage(1)">ถัดไป ›</button>
-      </div>
-    </div>
-    <div class="table-hint">แตะที่แถวเพื่อดูรายละเอียดทั้งหมด (บนมือถือคอลัมน์รองถูกซ่อนไว้)</div>
-  </div>
-
   </div>
 </div>
 
@@ -1003,6 +971,97 @@ function closeDetail(){
   document.getElementById("modalOverlay").classList.remove("open");
 }
 
+function openProductDetailModal(monthDataStr){
+  const data = JSON.parse(monthDataStr);
+  const {year, month, detail} = data;
+
+  const rows = rowsForMonth_(year, month);
+  const productRows = rows.filter(r => {
+    const d = r.productDetail && r.productDetail !== "-" ? r.productDetail : "(ไม่ระบุ)";
+    return d === detail;
+  });
+
+  const incomeRows = productRows.filter(r => r.type === "รายได้");
+  const expenseRows = productRows.filter(r => r.type === "รายจ่าย");
+
+  const totalIncome = incomeRows.reduce((sum, r) => sum + r.amount, 0);
+  const totalExpense = expenseRows.reduce((sum, r) => sum + r.amount, 0);
+  const netProfit = totalIncome - totalExpense;
+  const margin = totalIncome > 0 ? (netProfit / totalIncome * 100) : 0;
+
+  const monthLabel = THAI_MONTHS[month] + " " + (year + 543);
+
+  document.getElementById("modalTitle").textContent = "รายละเอียดสินค้า: " + detail;
+
+  let html = "<div style='margin-bottom:20px;'>";
+  html += "<div style='display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:16px;'>";
+  html += "<div style='background:var(--green-l);padding:12px;border-radius:8px;'><div style='font-size:11px;color:var(--green);margin-bottom:4px;'>รายรับรวม</div><div style='font-size:20px;font-weight:700;color:var(--green);'>" + thb(totalIncome) + "</div></div>";
+  html += "<div style='background:var(--red-l);padding:12px;border-radius:8px;'><div style='font-size:11px;color:var(--red);margin-bottom:4px;'>รายจ่ายรวม</div><div style='font-size:20px;font-weight:700;color:var(--red);'>" + thb(totalExpense) + "</div></div>";
+  html += "<div style='background:var(--gold-l);padding:12px;border-radius:8px;'><div style='font-size:11px;color:#7a5b1e;margin-bottom:4px;'>กำไรสุทธิ</div><div style='font-size:20px;font-weight:700;color:" + (netProfit >= 0 ? "var(--green)" : "var(--red)") + ";'>" + thb(netProfit) + "</div></div>";
+  html += "<div style='background:var(--blue-l);padding:12px;border-radius:8px;'><div style='font-size:11px;color:var(--blue);margin-bottom:4px;'>อัตรากำไร</div><div style='font-size:20px;font-weight:700;color:" + (margin >= 0 ? "var(--green)" : "var(--red)") + ";'>" + margin.toFixed(1) + "%</div></div>";
+  html += "</div>";
+  html += "<div style='font-size:12px;color:#8a8878;margin-bottom:16px;'>ข้อมูลจากเดือน " + monthLabel + " · รวม " + productRows.length + " รายการ</div>";
+  html += "</div>";
+
+  // รายรับ
+  html += "<div style='margin-bottom:24px;'>";
+  html += "<div style='font-weight:700;font-size:14px;margin-bottom:10px;color:var(--green);border-bottom:2px solid var(--green);padding-bottom:6px;'>📈 รายรับ (" + incomeRows.length + " รายการ)</div>";
+
+  if(incomeRows.length > 0){
+    html += "<div style='overflow-x:auto;'><table style='width:100%;font-size:12px;'>";
+    html += "<thead><tr><th style='text-align:left;padding:6px;'>วันที่</th><th style='text-align:left;padding:6px;'>รายละเอียด</th><th style='text-align:right;padding:6px;'>จำนวนเงิน</th><th style='text-align:left;padding:6px;'>การรับเงิน</th></tr></thead>";
+    html += "<tbody>";
+    incomeRows.forEach(r => {
+      html += "<tr style='border-bottom:1px solid var(--rule);'>";
+      html += "<td style='padding:6px;'>" + esc(r.dateRaw) + "</td>";
+      html += "<td style='padding:6px;'>" + esc(r.desc || "-") + "</td>";
+      html += "<td style='padding:6px;text-align:right;color:var(--green);font-weight:600;'>" + thb(r.amount) + "</td>";
+      html += "<td style='padding:6px;'><span class='badge " + (r.method === "เครดิต" ? "credit" : "cash") + "'>" + esc(r.method) + "</span></td>";
+      html += "</tr>";
+    });
+    html += "</tbody></table></div>";
+  } else {
+    html += "<div style='text-align:center;color:#8a8878;padding:12px;font-size:12px;'>ไม่มีรายรับ</div>";
+  }
+  html += "</div>";
+
+  // รายจ่าย
+  html += "<div style='margin-bottom:16px;'>";
+  html += "<div style='font-weight:700;font-size:14px;margin-bottom:10px;color:var(--red);border-bottom:2px solid var(--red);padding-bottom:6px;'>📉 รายจ่าย (" + expenseRows.length + " รายการ)</div>";
+
+  if(expenseRows.length > 0){
+    html += "<div style='overflow-x:auto;'><table style='width:100%;font-size:12px;'>";
+    html += "<thead><tr><th style='text-align:left;padding:6px;'>วันที่</th><th style='text-align:left;padding:6px;'>รายละเอียด</th><th style='text-align:right;padding:6px;'>จำนวนเงิน</th><th style='text-align:left;padding:6px;'>การรับเงิน</th></tr></thead>";
+    html += "<tbody>";
+    expenseRows.forEach(r => {
+      html += "<tr style='border-bottom:1px solid var(--rule);'>";
+      html += "<td style='padding:6px;'>" + esc(r.dateRaw) + "</td>";
+      html += "<td style='padding:6px;'>" + esc(r.desc || "-") + "</td>";
+      html += "<td style='padding:6px;text-align:right;color:var(--red);font-weight:600;'>" + thb(r.amount) + "</td>";
+      html += "<td style='padding:6px;'><span class='badge " + (r.method === "เครดิต" ? "credit" : "cash") + "'>" + esc(r.method) + "</span></td>";
+      html += "</tr>";
+    });
+    html += "</tbody></table></div>";
+  } else {
+    html += "<div style='text-align:center;color:#8a8878;padding:12px;font-size:12px;'>ไม่มีรายจ่าย</div>";
+  }
+  html += "</div>";
+
+  // สรุปการคำนวณ
+  html += "<div style='background:var(--paper);border:2px solid var(--ink);border-radius:8px;padding:14px;margin-top:16px;'>";
+  html += "<div style='font-weight:700;font-size:13px;margin-bottom:10px;'>💡 การคำนวณอัตรากำไร</div>";
+  html += "<div style='font-size:12px;line-height:1.8;'>";
+  html += "รายรับรวม: <strong>" + thb(totalIncome) + "</strong><br>";
+  html += "รายจ่ายรวม: <strong>" + thb(totalExpense) + "</strong><br>";
+  html += "กำไรสุทธิ: <strong style='color:" + (netProfit >= 0 ? "var(--green)" : "var(--red)") + ";'>" + thb(netProfit) + "</strong> (" + thb(totalIncome) + " - " + thb(totalExpense) + ")<br>";
+  html += "อัตรากำไร: <strong style='color:" + (margin >= 0 ? "var(--green)" : "var(--red)") + ";'>" + margin.toFixed(2) + "%</strong> (กำไรสุทธิ ÷ รายรับ × 100)";
+  html += "</div>";
+  html += "</div>";
+
+  document.getElementById("modalBody").innerHTML = html;
+  document.getElementById("modalOverlay").classList.add("open");
+}
+
 // Event delegation แทน inline onclick: ค่าที่มาจาก Sheet (key, ชื่อผู้รับผิดชอบ) ไม่ต้องถูกฝัง
 // เป็นโค้ด JS ใน attribute อีก จึงไม่พังเมื่อค่ามี ' " หรืออักขระพิเศษ และไม่เปิดช่องให้ inject
 document.getElementById("tableBody").addEventListener("click", (e) => {
@@ -1029,6 +1088,11 @@ document.getElementById("reimburseBody").addEventListener("click", (e) => {
 document.getElementById("receiveBody").addEventListener("click", (e) => {
   const btn = e.target.closest("button[data-owner]");
   if(btn) confirmAllReceivableForOwner(btn.dataset.owner);
+});
+
+document.getElementById("reportProductDetailBody").addEventListener("click", (e) => {
+  const tr = e.target.closest("tr[data-product-detail]");
+  if(tr && tr.dataset.monthData) openProductDetailModal(tr.dataset.monthData);
 });
 
 document.getElementById("bizTabs").addEventListener("click", (e) => {
@@ -1379,16 +1443,27 @@ function renderMonthlyReport_(){
     })
     .sort((a,b) => b[2] - a[2]); // เรียงตามกำไรสุทธิมากไปน้อย
 
-  document.getElementById("reportProductDetailBody").innerHTML = productDetailEntries.length === 0
+  const tbody = document.getElementById("reportProductDetailBody");
+  tbody.innerHTML = productDetailEntries.length === 0
     ? "<tr><td colspan='5' style='text-align:center;color:#8a8878;'>ไม่มีข้อมูล</td></tr>"
-    : productDetailEntries.map(([detail, s, net, margin]) => {
-        const marginColor = margin >= 0 ? "var(--green)" : "var(--red)";
-        return "<tr><td>" + esc(detail) + "</td>" +
-          "<td style='text-align:right;color:var(--green)'>" + thb(s.income) + "</td>" +
-          "<td style='text-align:right;color:var(--red)'>" + thb(s.expense) + "</td>" +
-          "<td style='text-align:right;font-weight:700;color:" + (net>=0?"var(--green)":"var(--red)") + "'>" + thb(net) + "</td>" +
-          "<td style='text-align:right;font-weight:700;color:" + marginColor + "'>" + margin.toFixed(1) + "%</td></tr>";
-      }).join("");
+    : "";
+
+  if(productDetailEntries.length > 0){
+    productDetailEntries.forEach(([detail, s, net, margin]) => {
+      const marginColor = margin >= 0 ? "var(--green)" : "var(--red)";
+      const tr = document.createElement("tr");
+      tr.style.cursor = "pointer";
+      tr.dataset.productDetail = detail;
+      tr.dataset.monthData = JSON.stringify({year: y, month: m, detail: detail});
+      tr.innerHTML = "<td>" + esc(detail) + "</td>" +
+        "<td style='text-align:right;color:var(--green)'>" + thb(s.income) + "</td>" +
+        "<td style='text-align:right;color:var(--red)'>" + thb(s.expense) + "</td>" +
+        "<td style='text-align:right;font-weight:700;color:" + (net>=0?"var(--green)":"var(--red)") + "'>" + thb(net) + "</td>" +
+        "<td style='text-align:right;font-weight:700;color:" + marginColor + "'>" + margin.toFixed(1) + "%</td>";
+      tbody.appendChild(tr);
+    });
+  }
+
 
   if(reportProductDetailChart) reportProductDetailChart.destroy();
   reportProductDetailChart = new Chart(document.getElementById("reportProductDetailChart"), {
