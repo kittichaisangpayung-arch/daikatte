@@ -244,6 +244,25 @@
     <div class="login-error" id="loginError" style="display:none;">ชื่อหรือรหัสผ่านไม่ถูกต้อง กรุณาลองใหม่</div>
     <button class="login-btn" onclick="attemptLogin()">เข้าสู่ระบบ</button>
     <div class="login-hint">ระบบนี้ใช้รหัสผ่านร่วมของทีมเพื่อกันคนนอกเข้าดูโดยไม่ตั้งใจ ไม่ใช่ระบบยืนยันตัวตนระดับสูง</div>
+
+    <div style="margin-top:24px; padding-top:20px; border-top:1px solid var(--rule);">
+      <div style="font-size:11px; font-weight:600; color:var(--ink); margin-bottom:8px;">📝 Note / Revision</div>
+      <div style="font-size:11px; color:#8a8878; line-height:1.6;">
+        <strong>v1.2.0 (12 ก.ย. 2026)</strong><br>
+        • เพิ่มฟีเจอร์คลิกดูรายละเอียด Product Detail พร้อมรายรับรายจ่ายแยกรายการ<br>
+        • แสดง Product Detail ทั้งหมดในรายงานประจำเดือน<br>
+        • ปรับปรุงหน้าแดชบอร์ด ลบตารางรายการทั้งหมดออก<br>
+        • แก้ไขการคำนวณ % change จากเดือนก่อนหน้า<br>
+        <br>
+        <strong>v1.1.0</strong><br>
+        • เพิ่มหน้ารายงานประจำเดือนพร้อมการวิเคราะห์แยกตาม Product Detail<br>
+        • เพิ่มกราฟแสดงอัตรากำไรตามสินค้า<br>
+        <br>
+        <strong>v1.0.0</strong><br>
+        • เปิดตัวระบบรายรับ-รายจ่าย<br>
+        • แดชบอร์ด, ตัวกรองข้อมูล, วิเคราะห์เชิงลึก<br>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -2257,6 +2276,18 @@ function bizMethodFilteredRows_(){
 }
 
 function monthBounds_(monthsAgo){
+  const fromVal = document.getElementById("dateFrom").value;
+  const toVal = document.getElementById("dateTo").value;
+
+  // ถ้ามีการเลือกช่วงเวลา ให้ใช้วันที่ที่เลือก
+  if(fromVal && toVal){
+    const selectedDate = parseDateInputLocal_(fromVal);
+    const start = new Date(selectedDate.getFullYear(), selectedDate.getMonth() - monthsAgo, 1);
+    const end = new Date(selectedDate.getFullYear(), selectedDate.getMonth() - monthsAgo + 1, 1);
+    return { start, end };
+  }
+
+  // ถ้าไม่มีการเลือก ใช้เดือนปัจจุบัน
   const now = new Date();
   const start = new Date(now.getFullYear(), now.getMonth() - monthsAgo, 1);
   const end = new Date(now.getFullYear(), now.getMonth() - monthsAgo + 1, 1);
