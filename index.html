@@ -289,6 +289,7 @@
     <button class="page-nav-btn" data-page="analysis" onclick="showPage('analysis')">📈 วิเคราะห์เชิงลึก</button>
     <button class="page-nav-btn" data-page="reimburse" onclick="showPage('reimburse')">💸 คืนเงิน/ค้างรับ</button>
     <button class="page-nav-btn" data-page="monthly" onclick="showPage('monthly')">🗓️ รายงานประจำเดือน</button>
+    <button class="page-nav-btn" data-page="trends" onclick="showPage('trends')">📉 Trends</button>
   </div>
 
   <div class="error-box" id="errorBox">
@@ -633,6 +634,16 @@
   </div>
 
   <!-- ===================== หน้าแดชบอร์ด (ข้อมูล/ตัวกรองแยกอิสระจากหน้าตัวกรอง) ===================== -->
+  <div id="trendsPage" style="display:none;">
+    <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:12px;">
+      <div style="font-size:12px; color:#8a8878;">
+        หากหน้านี้ไม่แสดง (ว่างหรือถูกปฏิเสธการเชื่อมต่อ) แสดงว่าเซิร์ฟเวอร์ปลายทางไม่อนุญาตให้ฝังหน้า กรุณากดปุ่มเปิดในแท็บใหม่
+      </div>
+      <a class="refresh-btn" id="trendsOpenLink" href="https://terzanalak.pythonanywhere.com/dashboard/trends/?months=1" target="_blank" rel="noopener noreferrer" style="text-decoration:none;">↗ เปิดในแท็บใหม่</a>
+    </div>
+    <iframe id="trendsFrame" title="Trends dashboard" style="width:100%; height:80vh; border:1px solid var(--rule); border-radius:10px; background:#fff;"></iframe>
+  </div>
+
   <div id="dashboardPage">
 
   <div class="filter-bar">
@@ -1192,6 +1203,8 @@ document.getElementById("a_bizTabs").addEventListener("click", (e) => {
   }
 });
 
+const TRENDS_URL = "https://terzanalak.pythonanywhere.com/dashboard/trends/?months=1";
+
 function showPage(name){
   currentPageView = name;
   document.getElementById("dashboardPage").style.display = name === "dashboard" ? "block" : "none";
@@ -1199,6 +1212,11 @@ function showPage(name){
   document.getElementById("analysisPage").style.display = name === "analysis" ? "block" : "none";
   document.getElementById("reimburseCombinedPage").style.display = name === "reimburse" ? "block" : "none";
   document.getElementById("monthlyReportPage").style.display = name === "monthly" ? "block" : "none";
+  document.getElementById("trendsPage").style.display = name === "trends" ? "block" : "none";
+  if(name === "trends"){
+    const frame = document.getElementById("trendsFrame");
+    if(!frame.src) frame.src = TRENDS_URL;
+  }
   document.querySelectorAll("#pageNav .page-nav-btn").forEach(b => b.classList.toggle("active", b.dataset.page === name));
   if(name === "analysis") renderAnalysisPage_();
   if(name === "reimburse") { renderReimbursementSummary_(); renderReceivableSummary_(); }
