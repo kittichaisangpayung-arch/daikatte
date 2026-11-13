@@ -290,6 +290,7 @@
     <button class="page-nav-btn" data-page="analysis" onclick="showPage('analysis')">📈 วิเคราะห์เชิงลึก</button>
     <button class="page-nav-btn" data-page="reimburse" onclick="showPage('reimburse')">💸 คืนเงิน/ค้างรับ</button>
     <button class="page-nav-btn" data-page="monthly" onclick="showPage('monthly')">🗓️ รายงานประจำเดือน</button>
+    <button class="page-nav-btn" data-page="tax" onclick="showPage('tax')">🧾 งบการเงิน/ภาษี</button>
     <button class="page-nav-btn" data-page="trends" onclick="showPage('trends')">📉 สินค้า OEM</button>
   </div>
 
@@ -632,6 +633,65 @@
       <div class="cards" id="reportCreditCards" style="margin-bottom:0;"></div>
     </div>
 
+  </div>
+
+  <!-- ===================== หน้างบการเงิน / ประมาณการภาษีเงินได้นิติบุคคล ===================== -->
+  <div id="taxPage" style="display:none;">
+
+    <div class="filter-bar">
+      <div class="filter-group">
+        <span class="filter-label">ปีบัญชี</span>
+        <select class="date-input" id="taxYearSelect"></select>
+      </div>
+      <label class="filter-group" style="cursor:pointer;">
+        <input type="checkbox" id="taxCapitalOk" checked>
+        <span style="font-size:13px;">ทุนชำระแล้ว ณ วันสิ้นรอบบัญชีไม่เกิน 5 ล้านบาท</span>
+      </label>
+    </div>
+
+    <div class="meta" id="taxMeta"></div>
+
+    <div class="cards" id="taxKpiCards"></div>
+
+    <div class="charts">
+      <div class="chart-box">
+        <div class="chart-title">งบกำไรขาดทุน</div>
+        <div style="overflow-x:auto;">
+          <table>
+            <thead><tr><th>รายการ</th><th style="text-align:right">จำนวนเงิน (ก่อน VAT)</th></tr></thead>
+            <tbody id="taxIncomeStatementBody"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="chart-box">
+        <div class="chart-title">การคำนวณภาษีเงินได้นิติบุคคล</div>
+        <div id="taxSmeStatus" style="font-size:13px; line-height:1.8; background:#F6F3EA; border:1px solid var(--rule); border-radius:8px; padding:10px 12px; margin-bottom:14px;"></div>
+        <div style="overflow-x:auto;">
+          <table>
+            <thead><tr><th>กำไรสุทธิ (บาท)</th><th style="text-align:right">อัตรา</th><th style="text-align:right">กำไรในขั้นนี้</th><th style="text-align:right">ภาษี</th></tr></thead>
+            <tbody id="taxBracketBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="chart-box" style="margin-bottom:24px;">
+      <div class="chart-title">สรุปภาษีรายปี</div>
+      <div style="overflow-x:auto;">
+        <table>
+          <thead><tr><th>ปี</th><th style="text-align:right">รายได้</th><th style="text-align:right">ค่าใช้จ่าย</th><th style="text-align:right">กำไรก่อนภาษี</th><th>อัตราที่ใช้</th><th style="text-align:right">ภาษีเงินได้นิติบุคคล</th><th style="text-align:right">กำไรหลังภาษี</th></tr></thead>
+          <tbody id="taxYearlyBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="chart-box" style="font-size:12px; color:#6b6a63; line-height:1.8;">
+      <div class="chart-title" style="color:var(--ink);">หมายเหตุ</div>
+      <div>• อัตรา SME: กำไรสุทธิ 0–300,000 บาท ยกเว้นภาษี, 300,001–3,000,000 บาท ร้อยละ 15, ส่วนที่เกิน 3,000,000 บาท ร้อยละ 20 ใช้ได้เมื่อทุนชำระแล้ว ณ วันสิ้นรอบบัญชีไม่เกิน 5 ล้านบาท และรายได้จากการขายสินค้า/ให้บริการไม่เกิน 30 ล้านบาท ถ้าไม่เข้าเงื่อนไขใช้อัตราร้อยละ 20 ของกำไรทั้งจำนวน</div>
+      <div>• รายได้และค่าใช้จ่ายใช้ยอดก่อน VAT (คอลัมน์ amount_auto) เพราะ VAT ขาย/VAT ซื้อไม่ใช่รายได้หรือค่าใช้จ่ายของบริษัท ฐานภาษีจึงเป็นกำไรสุทธิก่อนหัก VAT สุทธิ</div>
+      <div>• เป็นตัวเลขประมาณการจากกำไรทางบัญชีใน Sheet กำไรสุทธิทางภาษีจริงอาจต่างออกไป เช่น ต้องบวกกลับรายจ่ายต้องห้าม (รายจ่ายที่ไม่มีหลักฐาน, ค่ารับรองเกินเกณฑ์) และหักขาดทุนสะสมยกมาได้ไม่เกิน 5 ปี ควรให้ผู้สอบบัญชียืนยันก่อนยื่น</div>
+      <div>• คิดเป็นรอบบัญชีตามปีปฏิทิน (ม.ค.–ธ.ค.) และรวมทุกธุรกิจใน Sheet เป็นบริษัทเดียว · ยื่น ภ.ง.ด.51 (ครึ่งปี) ภายใน 2 เดือนหลังครบ 6 เดือนแรก และ ภ.ง.ด.50 (ทั้งปี) ภายใน 150 วันหลังสิ้นรอบบัญชี</div>
+    </div>
   </div>
 
   <!-- ===================== หน้าแดชบอร์ด (ข้อมูล/ตัวกรองแยกอิสระจากหน้าตัวกรอง) ===================== -->
@@ -1228,6 +1288,7 @@ function showPage(name){
   document.getElementById("analysisPage").style.display = name === "analysis" ? "block" : "none";
   document.getElementById("reimburseCombinedPage").style.display = name === "reimburse" ? "block" : "none";
   document.getElementById("monthlyReportPage").style.display = name === "monthly" ? "block" : "none";
+  document.getElementById("taxPage").style.display = name === "tax" ? "block" : "none";
   document.getElementById("trendsPage").style.display = name === "trends" ? "block" : "none";
   if(name === "trends"){
     const frame = document.getElementById("trendsFrame");
@@ -1237,6 +1298,7 @@ function showPage(name){
   if(name === "analysis") renderAnalysisPage_();
   if(name === "reimburse") { renderReimbursementSummary_(); renderReceivableSummary_(); }
   if(name === "monthly") renderMonthlyReport_();
+  if(name === "tax") renderTaxPage_();
   window.scrollTo(0, 0);
 }
 
@@ -1580,6 +1642,125 @@ function renderMonthlyReport_(){
     "<div class='card'><div class='card-label' style='color:var(--green)'>เครดิตค้างรับ</div><div class='card-value'>" + thb(recv) + "</div></div>" +
     "<div class='card'><div class='card-label' style='color:var(--red)'>เครดิตค้างจ่าย</div><div class='card-value'>" + thb(pay) + "</div></div>";
 }
+
+// ภาษีเงินได้นิติบุคคล: อัตรา SME ใช้ได้เมื่อทุนชำระแล้ว ≤ 5 ล้าน และรายได้ ≤ 30 ล้าน ไม่เช่นนั้นร้อยละ 20 ของกำไรทั้งจำนวน
+const SME_REVENUE_LIMIT = 30000000;
+const SME_TAX_BRACKETS = [
+  { upTo: 300000, rate: 0 },
+  { upTo: 3000000, rate: 0.15 },
+  { upTo: Infinity, rate: 0.20 }
+];
+const GENERAL_CIT_RATE = 0.20;
+
+function calcCorporateTax_(profit, isSme){
+  const taxable = Math.max(profit, 0);
+  if(!isSme){
+    const tax = Math.round(taxable * GENERAL_CIT_RATE * 100) / 100;
+    return { tax, brackets: [{ label: "กำไรสุทธิทั้งจำนวน", rate: GENERAL_CIT_RATE, base: taxable, tax }] };
+  }
+  let lower = 0, total = 0;
+  const brackets = SME_TAX_BRACKETS.map(b => {
+    const base = Math.max(Math.min(taxable, b.upTo) - lower, 0);
+    const tax = Math.round(base * b.rate * 100) / 100;
+    const label = b.upTo === Infinity
+      ? "เกิน " + lower.toLocaleString("en-US")
+      : (lower === 0 ? "0" : (lower + 1).toLocaleString("en-US")) + " – " + b.upTo.toLocaleString("en-US");
+    lower = b.upTo;
+    total += tax;
+    return { label, rate: b.rate, base, tax };
+  });
+  return { tax: Math.round(total * 100) / 100, brackets };
+}
+
+// ภาษีคิดทั้งบริษัท จึงใช้ทุกรายการในปีนั้น ไม่ผ่านตัวกรองธุรกิจ/ช่องทางของหน้าแดชบอร์ด
+function taxYearStats_(year){
+  const rows = allRows.filter(r => r.date && r.date.getFullYear() === year);
+  const stats = calcStats(rows);
+  const capitalOk = document.getElementById("taxCapitalOk").checked;
+  const revenueOk = stats.income <= SME_REVENUE_LIMIT;
+  const isSme = capitalOk && revenueOk;
+  const profit = stats.net;
+  const t = calcCorporateTax_(profit, isSme);
+  return { year, rows, stats, capitalOk, revenueOk, isSme, profit, tax: t.tax, brackets: t.brackets, afterTax: profit - t.tax };
+}
+
+// TAX_RENDER_PLACEHOLDER
+function renderTaxPage_(){
+  const years = [...new Set(allRows.map(r => r.date && r.date.getFullYear()).filter(Boolean))].sort((a, b) => b - a);
+  const select = document.getElementById("taxYearSelect");
+  if(select.options.length !== years.length){
+    const prev = select.value;
+    select.innerHTML = years.map(y => "<option value='" + y + "'>" + (y + 543) + "</option>").join("");
+    select.value = years.includes(parseInt(prev, 10)) ? prev : years[0];
+  }
+  if(years.length === 0){
+    document.getElementById("taxMeta").textContent = "ยังไม่มีข้อมูล";
+    return;
+  }
+  const s = taxYearStats_(parseInt(select.value, 10));
+  const yearText = s.year + 543;
+
+  document.getElementById("taxMeta").textContent = s.rows.length + " รายการในปี " + yearText +
+    " · ภาษีคิดทั้งบริษัท ไม่ผ่านตัวกรองธุรกิจ/ช่องทางของหน้าแดชบอร์ด · ตัวเลขเป็นประมาณการจากกำไรทางบัญชี";
+
+  const taxRate = s.profit > 0 ? (s.tax / s.profit * 100) : 0;
+  document.getElementById("taxKpiCards").innerHTML = [
+    ["รายได้รวม", thb(s.stats.income), "var(--green)", "ยอดก่อน VAT"],
+    ["ค่าใช้จ่ายรวม", thb(s.stats.expense), "var(--red)", "ยอดก่อน VAT"],
+    ["กำไรก่อนภาษี", (s.profit < 0 ? "-" : "") + thb(Math.abs(s.profit)), s.profit >= 0 ? "var(--ink)" : "var(--red)", "รายได้ − ค่าใช้จ่าย"],
+    ["ภาษีเงินได้นิติบุคคล", thb(s.tax), "var(--gold)", s.isSme ? "อัตรา SME (อัตราที่แท้จริง " + taxRate.toFixed(2) + "%)" : "อัตราร้อยละ 20"],
+    ["กำไรหลังภาษี", (s.afterTax < 0 ? "-" : "") + thb(Math.abs(s.afterTax)), s.afterTax >= 0 ? "var(--green)" : "var(--red)", "กำไรก่อนภาษี − ภาษี"]
+  ].map(([label, val, color, sub]) =>
+    "<div class='card'><div class='card-label' style='color:" + color + "'>" + label + "</div><div class='card-value'>" + val + "</div><div class='card-sub'>" + sub + "</div></div>"
+  ).join("");
+
+  const byCat = {};
+  s.rows.filter(r => r.type === "รายจ่าย").forEach(r => { byCat[r.category] = (byCat[r.category] || 0) + r.amount; });
+  const cats = Object.entries(byCat).sort((a, b) => b[1] - a[1]);
+  const plRows = [["รายได้", s.stats.income, "var(--green)"]]
+    .concat(cats.map(([cat, amt]) => ["หัก ค่าใช้จ่าย — " + cat, amt, "var(--red)"]))
+    .concat([["รวมค่าใช้จ่าย", s.stats.expense, "var(--red)"], ["กำไรสุทธิก่อนภาษี", s.profit, "var(--ink)"]]);
+  document.getElementById("taxIncomeStatementBody").innerHTML = plRows.map(([label, amt, color], i) => {
+    const isTotal = i === 0 || i >= plRows.length - 2;
+    return "<tr" + (isTotal ? " style='font-weight:700; background:#F6F3EA;'" : "") + ">" +
+      "<td>" + esc(label) + "</td>" +
+      "<td style='text-align:right; color:" + color + "'>" + (amt < 0 ? "-" : "") + thb(Math.abs(amt)) + "</td></tr>";
+  }).join("");
+
+  const reason = !s.revenueOk
+    ? "รายได้ " + thb(s.stats.income) + " เกิน 30 ล้านบาท"
+    : (!s.capitalOk ? "ทุนชำระแล้วเกิน 5 ล้านบาท (ตามที่ระบุ)" : "");
+  document.getElementById("taxSmeStatus").innerHTML = s.isSme
+    ? "<span style='color:var(--green); font-weight:700;'>เข้าเงื่อนไข SME</span> — รายได้ " + thb(s.stats.income) + " ไม่เกิน 30 ล้านบาท และทุนชำระแล้วไม่เกิน 5 ล้านบาท ใช้อัตราขั้นบันได"
+    : "<span style='color:var(--red); font-weight:700;'>ไม่เข้าเงื่อนไข SME</span> — " + reason + " ใช้อัตราร้อยละ 20 ของกำไรทั้งจำนวน";
+
+  const bracketRows = s.brackets.map(b =>
+    "<tr><td>" + b.label + "</td>" +
+    "<td style='text-align:right'>" + (b.rate * 100).toFixed(0) + "%</td>" +
+    "<td style='text-align:right'>" + thb(b.base) + "</td>" +
+    "<td style='text-align:right'>" + thb(b.tax) + "</td></tr>"
+  ).join("");
+  document.getElementById("taxBracketBody").innerHTML = bracketRows +
+    "<tr style='font-weight:700; background:#F6F3EA;'><td>ภาษีทั้งสิ้น</td><td></td><td></td><td style='text-align:right; color:var(--gold)'>" + thb(s.tax) + "</td></tr>" +
+    "<tr style='font-weight:700;'><td>กำไรหลังหักภาษี</td><td></td><td></td><td style='text-align:right; color:" + (s.afterTax >= 0 ? "var(--green)" : "var(--red)") + "'>" + (s.afterTax < 0 ? "-" : "") + thb(Math.abs(s.afterTax)) + "</td></tr>";
+
+  document.getElementById("taxYearlyBody").innerHTML = years.slice().sort((a, b) => a - b).map(y => {
+    const ys = taxYearStats_(y);
+    const active = y === s.year;
+    return "<tr" + (active ? " style='font-weight:700; background:#F6F3EA;'" : "") + ">" +
+      "<td>" + (y + 543) + (active ? " ◀" : "") + "</td>" +
+      "<td style='text-align:right'>" + thb(ys.stats.income) + "</td>" +
+      "<td style='text-align:right'>" + thb(ys.stats.expense) + "</td>" +
+      "<td style='text-align:right'>" + (ys.profit < 0 ? "-" : "") + thb(Math.abs(ys.profit)) + "</td>" +
+      "<td>" + (ys.isSme ? "SME" : "20%") + "</td>" +
+      "<td style='text-align:right; color:var(--gold)'>" + thb(ys.tax) + "</td>" +
+      "<td style='text-align:right; color:" + (ys.afterTax >= 0 ? "var(--green)" : "var(--red)") + "'>" + (ys.afterTax < 0 ? "-" : "") + thb(Math.abs(ys.afterTax)) + "</td></tr>";
+  }).join("");
+}
+
+document.getElementById("taxYearSelect").addEventListener("change", renderTaxPage_);
+document.getElementById("taxCapitalOk").addEventListener("change", renderTaxPage_);
+
 
 async function exportMonthlyReportPDF_(){
   const btn = document.getElementById("exportMonthlyPdfBtn");
@@ -2228,10 +2409,10 @@ function loadData(){
         category: r["Catagory"] || "-",
         desc: r["Description"] || "",
         // รายรับ/รายจ่ายใช้ amount_auto (ยอดก่อน VAT) ตามที่กำหนด
-        // ถ้าแถวไม่มีค่าให้ถอยกลับไปใช้ Amount - VAT + discount ซึ่งเป็นสูตรเดียวกับ amount_auto
+        // ถ้าแถวไม่มีค่าให้ถอยกลับไปใช้ Amount - VAT ซึ่งตรงกับค่าที่ amount_auto ให้ใน Sheet
         amount: (function(){
           const auto = parseMoney(r["amount_auto"]);
-          return auto > 0 ? auto : parseMoney(r["Amount"]) - parseMoney(r["VAT"]) + parseMoney(r["discount"]);
+          return auto > 0 ? auto : parseMoney(r["Amount"]) - parseMoney(r["VAT"]);
         })(),
         billAmount: parseMoney(r["Amount"]),
         discount: parseMoney(r["discount"]),
@@ -2263,6 +2444,7 @@ function loadData(){
       applyFiltersAndRender();
       renderReimbursementSummary_();
       renderReceivableSummary_();
+      if(currentPageView === "tax") renderTaxPage_();
     })
     .catch(e => {
       const box = document.getElementById("errorBox");
