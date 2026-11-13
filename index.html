@@ -69,7 +69,7 @@
   .login-hint{font-size:11px; color:#8a8878; margin-top:16px; line-height:1.5; text-align:center;}
 
 
-  .cards{display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:16px; margin-bottom:24px;}
+  .cards{display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:16px; margin-bottom:24px;}
   .card{background:#fff; border:1px solid var(--rule); border-radius:10px; padding:16px 18px;}
   .card.net{background:var(--ink);}
   .card-label{display:flex; align-items:center; gap:8px; font-size:12px; font-weight:600; margin-bottom:8px;}
@@ -83,6 +83,7 @@
   .biz-name{font-size:16px; font-weight:600; font-family:'Noto Serif Thai',serif;}
   .biz-margin-badge{font-size:12px; font-weight:600; padding:3px 10px; border-radius:20px;}
   .biz-stats{display:grid; grid-template-columns:repeat(4,1fr); gap:12px;}
+  @media (max-width:900px){.biz-stats{grid-template-columns:repeat(2,1fr);}}
   @media (max-width:520px){.biz-stats{grid-template-columns:repeat(2,1fr);}}
   .biz-stat-label{font-size:11px; color:#8a8878; margin-bottom:3px;}
   .biz-stat-value{font-size:15px; font-weight:600;}
@@ -694,9 +695,24 @@
       <div class="mom-badge" id="marginMomBadge"></div>
     </div>
     <div class="card">
-      <div class="card-label" style="color:var(--gold)">VAT ต้องนำส่ง</div>
+      <div class="card-label" style="color:var(--green)">VAT ขาย</div>
+      <div class="card-value" id="vatSellTotal">฿0</div>
+      <div class="card-sub">ภาษีขายจากรายรับ</div>
+    </div>
+    <div class="card">
+      <div class="card-label" style="color:var(--red)">VAT ซื้อ</div>
+      <div class="card-value" id="vatBuyTotal">฿0</div>
+      <div class="card-sub">ภาษีซื้อจากรายจ่าย (เครดิตหักได้)</div>
+    </div>
+    <div class="card">
+      <div class="card-label" style="color:var(--gold)">VAT สุทธิ</div>
       <div class="card-value" id="vatTotal">฿0</div>
       <div class="card-sub" id="vatTotalSub"></div>
+    </div>
+    <div class="card">
+      <div class="card-label" style="color:var(--blue)">กำไรสุทธิหลัง VAT</div>
+      <div class="card-value" id="netAfterVatTotal">฿0</div>
+      <div class="card-sub" id="netAfterVatSub"></div>
     </div>
     <div class="card">
       <div class="card-label" style="color:var(--green)">เครดิตค้างรับ</div>
@@ -1372,7 +1388,10 @@ function renderMonthlyReport_(){
     ["รายจ่ายรวม", thb(stats.expense), "var(--red)"],
     ["กำไรสุทธิ", (stats.net<0?"-":"") + thb(Math.abs(stats.net)), stats.net>=0 ? "var(--green)" : "var(--red)"],
     ["อัตรากำไร", stats.margin.toFixed(1) + "%", "var(--blue)"],
-    ["VAT ต้องนำส่ง", (stats.vatTotal>=0?"":"-") + thb(Math.abs(stats.vatTotal)), "var(--gold)"],
+    ["VAT ขาย", thb(stats.vatOnIncome), "var(--green)"],
+    ["VAT ซื้อ", thb(stats.vatOnExpense), "var(--red)"],
+    ["VAT สุทธิ", (stats.vatTotal>=0?"":"-") + thb(Math.abs(stats.vatTotal)), "var(--gold)"],
+    ["กำไรสุทธิหลัง VAT", (stats.netAfterVat<0?"-":"") + thb(Math.abs(stats.netAfterVat)), stats.netAfterVat>=0 ? "var(--green)" : "var(--red)"],
     ["จำนวนรายการ", rows.length + " รายการ", "var(--ink)"]
   ].map(([label,val,color]) =>
     "<div class='card'><div class='card-label' style='color:" + color + "'>" + label + "</div><div class='card-value'>" + val + "</div></div>"
@@ -1391,7 +1410,10 @@ function renderMonthlyReport_(){
         "<div><div class='biz-stat-label'>รายรับ</div><div class='biz-stat-value' style='color:var(--green)'>" + thb(s.income) + "</div></div>" +
         "<div><div class='biz-stat-label'>รายจ่าย</div><div class='biz-stat-value' style='color:var(--red)'>" + thb(s.expense) + "</div></div>" +
         "<div><div class='biz-stat-label'>กำไรสุทธิ</div><div class='biz-stat-value'>" + thb(s.net) + "</div></div>" +
-        "<div><div class='biz-stat-label'>VAT ต้องนำส่ง</div><div class='biz-stat-value' style='color:var(--gold)'>" + thb(s.vatTotal) + "</div></div>" +
+        "<div><div class='biz-stat-label'>VAT ขาย</div><div class='biz-stat-value' style='color:var(--green)'>" + thb(s.vatOnIncome) + "</div></div>" +
+        "<div><div class='biz-stat-label'>VAT ซื้อ</div><div class='biz-stat-value' style='color:var(--red)'>" + thb(s.vatOnExpense) + "</div></div>" +
+        "<div><div class='biz-stat-label'>VAT สุทธิ</div><div class='biz-stat-value' style='color:var(--gold)'>" + (s.vatTotal<0?"-":"") + thb(Math.abs(s.vatTotal)) + "</div></div>" +
+        "<div><div class='biz-stat-label'>กำไรสุทธิหลัง VAT</div><div class='biz-stat-value' style='color:" + (s.netAfterVat>=0?"var(--green)":"var(--red)") + "'>" + (s.netAfterVat<0?"-":"") + thb(Math.abs(s.netAfterVat)) + "</div></div>" +
       "</div></div>";
   }).join("");
 
@@ -1765,7 +1787,10 @@ function renderSearchResults_(){
     "<div class='search-summary-card'><div class='search-summary-label' style='color:var(--green)'>รายรับ</div><div class='search-summary-value'>" + thb(stats.income) + "</div></div>" +
     "<div class='search-summary-card'><div class='search-summary-label' style='color:var(--red)'>รายจ่าย</div><div class='search-summary-value'>" + thb(stats.expense) + "</div></div>" +
     "<div class='search-summary-card'><div class='search-summary-label' style='color:var(--blue)'>สุทธิ</div><div class='search-summary-value' style='color:" + (stats.net >= 0 ? "var(--green)" : "var(--red)") + "'>" + (stats.net < 0 ? "-" : "") + thb(Math.abs(stats.net)) + "</div></div>" +
-    "<div class='search-summary-card'><div class='search-summary-label' style='color:var(--gold)'>VAT ต้องนำส่ง</div><div class='search-summary-value' style='color:" + (stats.vatTotal >= 0 ? "var(--gold)" : "var(--green)") + "'>" + (stats.vatTotal < 0 ? "-" : "") + thb(Math.abs(stats.vatTotal)) + "</div><div style='font-size:11px; color:#8a8878; margin-top:4px;'>ขาย " + thb(stats.vatOnIncome) + " − ซื้อ " + thb(stats.vatOnExpense) + "</div></div>";
+    "<div class='search-summary-card'><div class='search-summary-label' style='color:var(--green)'>VAT ขาย</div><div class='search-summary-value'>" + thb(stats.vatOnIncome) + "</div></div>" +
+    "<div class='search-summary-card'><div class='search-summary-label' style='color:var(--red)'>VAT ซื้อ</div><div class='search-summary-value'>" + thb(stats.vatOnExpense) + "</div></div>" +
+    "<div class='search-summary-card'><div class='search-summary-label' style='color:var(--gold)'>VAT สุทธิ</div><div class='search-summary-value' style='color:" + (stats.vatTotal >= 0 ? "var(--gold)" : "var(--green)") + "'>" + (stats.vatTotal < 0 ? "-" : "") + thb(Math.abs(stats.vatTotal)) + "</div><div style='font-size:11px; color:#8a8878; margin-top:4px;'>VAT ขาย − VAT ซื้อ</div></div>" +
+    "<div class='search-summary-card'><div class='search-summary-label' style='color:var(--blue)'>กำไรสุทธิหลัง VAT</div><div class='search-summary-value' style='color:" + (stats.netAfterVat >= 0 ? "var(--green)" : "var(--red)") + "'>" + (stats.netAfterVat < 0 ? "-" : "") + thb(Math.abs(stats.netAfterVat)) + "</div></div>";
 
   if(searchTypeChart) searchTypeChart.destroy();
   searchTypeChart = new Chart(document.getElementById("searchTypeChart"), {
@@ -2202,7 +2227,12 @@ function loadData(){
         type: (r["Transaction Catagory"] || "").trim(),
         category: r["Catagory"] || "-",
         desc: r["Description"] || "",
-        amount: parseMoney(r["Amount"]) + parseMoney(r["discount"]),
+        // รายรับ/รายจ่ายใช้ amount_auto (ยอดก่อน VAT) ตามที่กำหนด
+        // ถ้าแถวไม่มีค่าให้ถอยกลับไปใช้ Amount - VAT + discount ซึ่งเป็นสูตรเดียวกับ amount_auto
+        amount: (function(){
+          const auto = parseMoney(r["amount_auto"]);
+          return auto > 0 ? auto : parseMoney(r["Amount"]) - parseMoney(r["VAT"]) + parseMoney(r["discount"]);
+        })(),
         billAmount: parseMoney(r["Amount"]),
         discount: parseMoney(r["discount"]),
         vat: parseMoney(r["VAT"]),
@@ -2280,9 +2310,12 @@ function calcStats(rows){
   });
   const net = income - expense;
   const margin = income > 0 ? (net / income * 100) : 0;
-  // VAT ต้องนำส่งสรรพากร = VAT ขาย (จากรายได้) - VAT ซื้อ (จากรายจ่าย, ใช้เป็นเครดิตหักได้)
+  // VAT สุทธิ = VAT ขาย (จากรายได้) - VAT ซื้อ (จากรายจ่าย, ใช้เป็นเครดิตหักได้)
   const vatTotal = vatOnIncome - vatOnExpense;
-  return {income, expense, net, margin, vatOnIncome, vatOnExpense, vatTotal};
+  // กำไรสุทธิหลัง VAT = กำไรสุทธิ (จากยอดก่อน VAT) - VAT สุทธิที่ต้องนำส่ง
+  // ถ้า VAT ซื้อมากกว่า VAT ขาย จะได้เครดิตภาษีคืน กำไรหลัง VAT จึงสูงกว่ากำไรสุทธิ
+  const netAfterVat = net - vatTotal;
+  return {income, expense, net, margin, vatOnIncome, vatOnExpense, vatTotal, netAfterVat};
 }
 
 function bizMethodFilteredRows_(){
@@ -2362,17 +2395,23 @@ function render(rows, excludedNoDate){
   document.getElementById("expenseTotal").textContent = thb(overall.expense);
   document.getElementById("netTotal").textContent = thb(overall.net);
   document.getElementById("marginTotal").textContent = overall.margin.toFixed(1) + "%";
+  document.getElementById("vatSellTotal").textContent = thb(overall.vatOnIncome);
+  document.getElementById("vatBuyTotal").textContent = thb(overall.vatOnExpense);
   const vatEl = document.getElementById("vatTotal");
   const vatSubEl = document.getElementById("vatTotalSub");
   if(overall.vatTotal >= 0){
     vatEl.textContent = thb(overall.vatTotal);
     vatEl.style.color = "";
-    vatSubEl.textContent = "VAT ขาย " + thb(overall.vatOnIncome) + " − VAT ซื้อ " + thb(overall.vatOnExpense);
+    vatSubEl.textContent = "VAT ขาย " + thb(overall.vatOnIncome) + " − VAT ซื้อ " + thb(overall.vatOnExpense) + " (ต้องนำส่ง)";
   } else {
     vatEl.textContent = "-" + thb(Math.abs(overall.vatTotal));
     vatEl.style.color = "var(--green)";
-    vatSubEl.textContent = "มีเครดิตภาษีสุทธิ (VAT ซื้อมากกว่า VAT ขาย)";
+    vatSubEl.textContent = "VAT ซื้อมากกว่า VAT ขาย (เครดิตภาษีสุทธิ)";
   }
+  const navEl = document.getElementById("netAfterVatTotal");
+  navEl.textContent = (overall.netAfterVat < 0 ? "-" : "") + thb(Math.abs(overall.netAfterVat));
+  navEl.style.color = overall.netAfterVat >= 0 ? "var(--green)" : "var(--red)";
+  document.getElementById("netAfterVatSub").textContent = "กำไรสุทธิ " + thb(overall.net) + " − VAT สุทธิ " + (overall.vatTotal < 0 ? "(" + thb(overall.vatTotal) + ")" : thb(overall.vatTotal));
 
   const creditReceivableRows = rows.filter(r => r.method === "เครดิต" && r.type === "รายได้");
   const creditPayableRows = rows.filter(r => r.method === "เครดิต" && r.type === "รายจ่าย");
@@ -2406,7 +2445,10 @@ function render(rows, excludedNoDate){
         "<div><div class='biz-stat-label'>รายรับ</div><div class='biz-stat-value' style='color:var(--green)'>" + thb(s.income) + "</div></div>" +
         "<div><div class='biz-stat-label'>รายจ่าย</div><div class='biz-stat-value' style='color:var(--red)'>" + thb(s.expense) + "</div></div>" +
         "<div><div class='biz-stat-label'>กำไรสุทธิ</div><div class='biz-stat-value'>" + thb(s.net) + "</div></div>" +
-        "<div><div class='biz-stat-label'>VAT ต้องนำส่ง</div><div class='biz-stat-value' style='color:" + (s.vatTotal >= 0 ? "var(--gold)" : "var(--green)") + "'>" + (s.vatTotal >= 0 ? thb(s.vatTotal) : "-" + thb(Math.abs(s.vatTotal))) + "</div></div>" +
+        "<div><div class='biz-stat-label'>VAT ขาย</div><div class='biz-stat-value' style='color:var(--green)'>" + thb(s.vatOnIncome) + "</div></div>" +
+        "<div><div class='biz-stat-label'>VAT ซื้อ</div><div class='biz-stat-value' style='color:var(--red)'>" + thb(s.vatOnExpense) + "</div></div>" +
+        "<div><div class='biz-stat-label'>VAT สุทธิ</div><div class='biz-stat-value' style='color:" + (s.vatTotal >= 0 ? "var(--gold)" : "var(--green)") + "'>" + (s.vatTotal >= 0 ? thb(s.vatTotal) : "-" + thb(Math.abs(s.vatTotal))) + "</div></div>" +
+        "<div><div class='biz-stat-label'>กำไรสุทธิหลัง VAT</div><div class='biz-stat-value' style='color:" + (s.netAfterVat >= 0 ? "var(--green)" : "var(--red)") + "'>" + (s.netAfterVat < 0 ? "-" : "") + thb(Math.abs(s.netAfterVat)) + "</div></div>" +
       "</div>" +
     "</div>";
   }).join("");
@@ -2581,7 +2623,10 @@ function buildReportElement_(){
     ["รายจ่ายรวม", thb(overall.expense), "#9A3B2E"],
     ["กำไรสุทธิ", thb(overall.net), "#232821"],
     ["อัตรากำไร", overall.margin.toFixed(1) + "%", "#3E5C78"],
-    ["VAT ต้องนำส่ง", (overall.vatTotal >= 0 ? thb(overall.vatTotal) : "-" + thb(Math.abs(overall.vatTotal))), "#B98A2E"],
+    ["VAT ขาย", thb(overall.vatOnIncome), "#2D6A4F"],
+    ["VAT ซื้อ", thb(overall.vatOnExpense), "#9A3B2E"],
+    ["VAT สุทธิ", (overall.vatTotal >= 0 ? thb(overall.vatTotal) : "-" + thb(Math.abs(overall.vatTotal))), "#B98A2E"],
+    ["กำไรสุทธิหลัง VAT", (overall.netAfterVat < 0 ? "-" : "") + thb(Math.abs(overall.netAfterVat)), overall.netAfterVat >= 0 ? "#2D6A4F" : "#9A3B2E"],
     ["เครดิตค้างรับ", thb(creditRecv), "#2D6A4F"],
     ["เครดิตค้างจ่าย", thb(creditPay), "#9A3B2E"],
     ["จำนวนรายการ", rows.length + " รายการ", "#232821"]
@@ -2595,7 +2640,7 @@ function buildReportElement_(){
 
   html += "<div style='font-size:14px; font-weight:600; margin-bottom:10px;'>เปรียบเทียบตามธุรกิจ</div>";
   html += "<table style='width:100%; border-collapse:collapse; margin-bottom:24px; font-size:12px;'>";
-  html += "<tr>" + ["ธุรกิจ","รายรับ","รายจ่าย","กำไรสุทธิ","อัตรากำไร","VAT ต้องนำส่ง"].map(h => "<th style='text-align:left; border-bottom:2px solid #232821; padding:6px 8px;'>" + h + "</th>").join("") + "</tr>";
+  html += "<tr>" + ["ธุรกิจ","รายรับ","รายจ่าย","กำไรสุทธิ","อัตรากำไร","VAT ขาย","VAT ซื้อ","VAT สุทธิ","กำไรสุทธิหลัง VAT"].map(h => "<th style='text-align:left; border-bottom:2px solid #232821; padding:6px 8px;'>" + h + "</th>").join("") + "</tr>";
   businesses.forEach(biz => {
     const s = calcStats(rows.filter(r => r.product === biz));
     html += "<tr>" +
@@ -2604,7 +2649,10 @@ function buildReportElement_(){
       "<td style='padding:6px 8px; border-bottom:1px solid #D8D2C0; color:#9A3B2E;'>" + thb(s.expense) + "</td>" +
       "<td style='padding:6px 8px; border-bottom:1px solid #D8D2C0; font-weight:600;'>" + thb(s.net) + "</td>" +
       "<td style='padding:6px 8px; border-bottom:1px solid #D8D2C0;'>" + s.margin.toFixed(1) + "%</td>" +
+      "<td style='padding:6px 8px; border-bottom:1px solid #D8D2C0; color:#2D6A4F;'>" + thb(s.vatOnIncome) + "</td>" +
+      "<td style='padding:6px 8px; border-bottom:1px solid #D8D2C0; color:#9A3B2E;'>" + thb(s.vatOnExpense) + "</td>" +
       "<td style='padding:6px 8px; border-bottom:1px solid #D8D2C0; color:#B98A2E;'>" + (s.vatTotal >= 0 ? thb(s.vatTotal) : "-" + thb(Math.abs(s.vatTotal))) + "</td>" +
+      "<td style='padding:6px 8px; border-bottom:1px solid #D8D2C0; font-weight:600; color:" + (s.netAfterVat >= 0 ? "#2D6A4F" : "#9A3B2E") + ";'>" + (s.netAfterVat < 0 ? "-" : "") + thb(Math.abs(s.netAfterVat)) + "</td>" +
       "</tr>";
   });
   html += "</table>";
