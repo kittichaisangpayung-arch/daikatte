@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>รายรับ-รายจ่าย | Dashboard 1.0</title>
+<title>รายรับ-รายจ่าย | Dashboard</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+Thai:wght@500;700&family=Noto+Sans+Thai:wght@400;500;600&display=swap');
   :root{
@@ -688,7 +688,7 @@
     <div class="chart-box" style="font-size:12px; color:#6b6a63; line-height:1.8;">
       <div class="chart-title" style="color:var(--ink);">หมายเหตุ</div>
       <div>• อัตรา SME: กำไรสุทธิ 0–300,000 บาท ยกเว้นภาษี, 300,001–3,000,000 บาท ร้อยละ 15, ส่วนที่เกิน 3,000,000 บาท ร้อยละ 20 ใช้ได้เมื่อทุนชำระแล้ว ณ วันสิ้นรอบบัญชีไม่เกิน 5 ล้านบาท และรายได้จากการขายสินค้า/ให้บริการไม่เกิน 30 ล้านบาท ถ้าไม่เข้าเงื่อนไขใช้อัตราร้อยละ 20 ของกำไรทั้งจำนวน</div>
-      <div>• รายได้และค่าใช้จ่ายใช้ยอดก่อน VAT (คอลัมน์ amount_auto) เพราะ VAT ขาย/VAT ซื้อไม่ใช่รายได้หรือค่าใช้จ่ายของบริษัท ฐานภาษีจึงเป็นกำไรสุทธิก่อนหัก VAT สุทธิ</div>
+      <div>• รายได้และค่าใช้จ่ายใช้ยอดก่อน VAT (คอลัมน์ amount_auto) เพราะ VAT ขาย/VAT ซื้อไม่ใช่รายได้หรือค่าใช้จ่ายของบริษัท ฐานภาษีจึงเป็นกำไรสุทธิก่อน VAT ส่วนมุมมองเงินสด (เงินเข้า/ออกจริง) อยู่ที่หน้าแดชบอร์ด</div>
       <div>• เป็นตัวเลขประมาณการจากกำไรทางบัญชีใน Sheet กำไรสุทธิทางภาษีจริงอาจต่างออกไป เช่น ต้องบวกกลับรายจ่ายต้องห้าม (รายจ่ายที่ไม่มีหลักฐาน, ค่ารับรองเกินเกณฑ์) และหักขาดทุนสะสมยกมาได้ไม่เกิน 5 ปี ควรให้ผู้สอบบัญชียืนยันก่อนยื่น</div>
       <div>• คิดเป็นรอบบัญชีตามปีปฏิทิน (ม.ค.–ธ.ค.) และรวมทุกธุรกิจใน Sheet เป็นบริษัทเดียว · ยื่น ภ.ง.ด.51 (ครึ่งปี) ภายใน 2 เดือนหลังครบ 6 เดือนแรก และ ภ.ง.ด.50 (ทั้งปี) ภายใน 150 วันหลังสิ้นรอบบัญชี</div>
     </div>
@@ -755,24 +755,24 @@
       <div class="mom-badge" id="marginMomBadge"></div>
     </div>
     <div class="card">
-      <div class="card-label" style="color:var(--green)">VAT ขาย</div>
-      <div class="card-value" id="vatSellTotal">฿0</div>
-      <div class="card-sub">ภาษีขายจากรายรับ</div>
+      <div class="card-label" style="color:var(--green)">เงินเข้ารวม VAT</div>
+      <div class="card-value" id="cashInTotal">฿0</div>
+      <div class="card-sub">เงินที่รับจริงจากลูกค้า</div>
     </div>
     <div class="card">
-      <div class="card-label" style="color:var(--red)">VAT ซื้อ</div>
-      <div class="card-value" id="vatBuyTotal">฿0</div>
-      <div class="card-sub">ภาษีซื้อจากรายจ่าย (เครดิตหักได้)</div>
+      <div class="card-label" style="color:var(--red)">เงินออกรวม VAT</div>
+      <div class="card-value" id="cashOutTotal">฿0</div>
+      <div class="card-sub">เงินที่จ่ายจริงให้ผู้ขาย</div>
     </div>
     <div class="card">
-      <div class="card-label" style="color:var(--gold)">VAT สุทธิ</div>
+      <div class="card-label" style="color:var(--gold)">VAT สุทธิ (กันไว้จ่ายสรรพากร)</div>
       <div class="card-value" id="vatTotal">฿0</div>
       <div class="card-sub" id="vatTotalSub"></div>
     </div>
     <div class="card">
-      <div class="card-label" style="color:var(--blue)">กำไรสุทธิหลัง VAT</div>
-      <div class="card-value" id="netAfterVatTotal">฿0</div>
-      <div class="card-sub" id="netAfterVatSub"></div>
+      <div class="card-label" style="color:var(--blue)">เงินสดคงเหลือ</div>
+      <div class="card-value" id="cashNetTotal">฿0</div>
+      <div class="card-sub" id="cashNetSub"></div>
     </div>
     <div class="card">
       <div class="card-label" style="color:var(--green)">เครดิตค้างรับ</div>
@@ -1450,10 +1450,10 @@ function renderMonthlyReport_(){
     ["รายจ่ายรวม", thb(stats.expense), "var(--red)"],
     ["กำไรสุทธิ", (stats.net<0?"-":"") + thb(Math.abs(stats.net)), stats.net>=0 ? "var(--green)" : "var(--red)"],
     ["อัตรากำไร", stats.margin.toFixed(1) + "%", "var(--blue)"],
-    ["VAT ขาย", thb(stats.vatOnIncome), "var(--green)"],
-    ["VAT ซื้อ", thb(stats.vatOnExpense), "var(--red)"],
-    ["VAT สุทธิ", (stats.vatTotal>=0?"":"-") + thb(Math.abs(stats.vatTotal)), "var(--gold)"],
-    ["กำไรสุทธิหลัง VAT", (stats.netAfterVat<0?"-":"") + thb(Math.abs(stats.netAfterVat)), stats.netAfterVat>=0 ? "var(--green)" : "var(--red)"],
+    ["เงินเข้ารวม VAT", thb(stats.cashIn), "var(--green)"],
+    ["เงินออกรวม VAT", thb(stats.cashOut), "var(--red)"],
+    ["VAT สุทธิ (กันไว้จ่ายสรรพากร)", (stats.vatTotal>=0?"":"-") + thb(Math.abs(stats.vatTotal)), "var(--gold)"],
+    ["เงินสดคงเหลือ", (stats.cashNet<0?"-":"") + thb(Math.abs(stats.cashNet)), stats.cashNet>=0 ? "var(--green)" : "var(--red)"],
     ["จำนวนรายการ", rows.length + " รายการ", "var(--ink)"]
   ].map(([label,val,color]) =>
     "<div class='card'><div class='card-label' style='color:" + color + "'>" + label + "</div><div class='card-value'>" + val + "</div></div>"
@@ -1472,10 +1472,10 @@ function renderMonthlyReport_(){
         "<div><div class='biz-stat-label'>รายรับ</div><div class='biz-stat-value' style='color:var(--green)'>" + thb(s.income) + "</div></div>" +
         "<div><div class='biz-stat-label'>รายจ่าย</div><div class='biz-stat-value' style='color:var(--red)'>" + thb(s.expense) + "</div></div>" +
         "<div><div class='biz-stat-label'>กำไรสุทธิ</div><div class='biz-stat-value'>" + thb(s.net) + "</div></div>" +
-        "<div><div class='biz-stat-label'>VAT ขาย</div><div class='biz-stat-value' style='color:var(--green)'>" + thb(s.vatOnIncome) + "</div></div>" +
-        "<div><div class='biz-stat-label'>VAT ซื้อ</div><div class='biz-stat-value' style='color:var(--red)'>" + thb(s.vatOnExpense) + "</div></div>" +
-        "<div><div class='biz-stat-label'>VAT สุทธิ</div><div class='biz-stat-value' style='color:var(--gold)'>" + (s.vatTotal<0?"-":"") + thb(Math.abs(s.vatTotal)) + "</div></div>" +
-        "<div><div class='biz-stat-label'>กำไรสุทธิหลัง VAT</div><div class='biz-stat-value' style='color:" + (s.netAfterVat>=0?"var(--green)":"var(--red)") + "'>" + (s.netAfterVat<0?"-":"") + thb(Math.abs(s.netAfterVat)) + "</div></div>" +
+        "<div><div class='biz-stat-label'>เงินเข้ารวม VAT</div><div class='biz-stat-value' style='color:var(--green)'>" + thb(s.cashIn) + "</div></div>" +
+        "<div><div class='biz-stat-label'>เงินออกรวม VAT</div><div class='biz-stat-value' style='color:var(--red)'>" + thb(s.cashOut) + "</div></div>" +
+        "<div><div class='biz-stat-label'>VAT สุทธิ (กันไว้จ่ายสรรพากร)</div><div class='biz-stat-value' style='color:var(--gold)'>" + (s.vatTotal<0?"-":"") + thb(Math.abs(s.vatTotal)) + "</div></div>" +
+        "<div><div class='biz-stat-label'>เงินสดคงเหลือ</div><div class='biz-stat-value' style='color:" + (s.cashNet>=0?"var(--green)":"var(--red)") + "'>" + (s.cashNet<0?"-":"") + thb(Math.abs(s.cashNet)) + "</div></div>" +
       "</div></div>";
   }).join("");
 
@@ -1968,10 +1968,10 @@ function renderSearchResults_(){
     "<div class='search-summary-card'><div class='search-summary-label' style='color:var(--green)'>รายรับ</div><div class='search-summary-value'>" + thb(stats.income) + "</div></div>" +
     "<div class='search-summary-card'><div class='search-summary-label' style='color:var(--red)'>รายจ่าย</div><div class='search-summary-value'>" + thb(stats.expense) + "</div></div>" +
     "<div class='search-summary-card'><div class='search-summary-label' style='color:var(--blue)'>สุทธิ</div><div class='search-summary-value' style='color:" + (stats.net >= 0 ? "var(--green)" : "var(--red)") + "'>" + (stats.net < 0 ? "-" : "") + thb(Math.abs(stats.net)) + "</div></div>" +
-    "<div class='search-summary-card'><div class='search-summary-label' style='color:var(--green)'>VAT ขาย</div><div class='search-summary-value'>" + thb(stats.vatOnIncome) + "</div></div>" +
-    "<div class='search-summary-card'><div class='search-summary-label' style='color:var(--red)'>VAT ซื้อ</div><div class='search-summary-value'>" + thb(stats.vatOnExpense) + "</div></div>" +
-    "<div class='search-summary-card'><div class='search-summary-label' style='color:var(--gold)'>VAT สุทธิ</div><div class='search-summary-value' style='color:" + (stats.vatTotal >= 0 ? "var(--gold)" : "var(--green)") + "'>" + (stats.vatTotal < 0 ? "-" : "") + thb(Math.abs(stats.vatTotal)) + "</div><div style='font-size:11px; color:#8a8878; margin-top:4px;'>VAT ขาย − VAT ซื้อ</div></div>" +
-    "<div class='search-summary-card'><div class='search-summary-label' style='color:var(--blue)'>กำไรสุทธิหลัง VAT</div><div class='search-summary-value' style='color:" + (stats.netAfterVat >= 0 ? "var(--green)" : "var(--red)") + "'>" + (stats.netAfterVat < 0 ? "-" : "") + thb(Math.abs(stats.netAfterVat)) + "</div></div>";
+    "<div class='search-summary-card'><div class='search-summary-label' style='color:var(--green)'>เงินเข้ารวม VAT</div><div class='search-summary-value'>" + thb(stats.cashIn) + "</div><div style='font-size:11px; color:#8a8878; margin-top:4px;'>รายรับ " + thb(stats.income) + " + VAT ขาย " + thb(stats.vatOnIncome) + "</div></div>" +
+    "<div class='search-summary-card'><div class='search-summary-label' style='color:var(--red)'>เงินออกรวม VAT</div><div class='search-summary-value'>" + thb(stats.cashOut) + "</div><div style='font-size:11px; color:#8a8878; margin-top:4px;'>รายจ่าย " + thb(stats.expense) + " + VAT ซื้อ " + thb(stats.vatOnExpense) + "</div></div>" +
+    "<div class='search-summary-card'><div class='search-summary-label' style='color:var(--gold)'>VAT สุทธิ (กันไว้จ่ายสรรพากร)</div><div class='search-summary-value' style='color:" + (stats.vatTotal >= 0 ? "var(--gold)" : "var(--green)") + "'>" + (stats.vatTotal < 0 ? "-" : "") + thb(Math.abs(stats.vatTotal)) + "</div><div style='font-size:11px; color:#8a8878; margin-top:4px;'>VAT ขาย − VAT ซื้อ</div></div>" +
+    "<div class='search-summary-card'><div class='search-summary-label' style='color:var(--blue)'>เงินสดคงเหลือ</div><div class='search-summary-value' style='color:" + (stats.cashNet >= 0 ? "var(--green)" : "var(--red)") + "'>" + (stats.cashNet < 0 ? "-" : "") + thb(Math.abs(stats.cashNet)) + "</div><div style='font-size:11px; color:#8a8878; margin-top:4px;'>เงินเข้า − เงินออก − VAT สุทธิ = กำไรสุทธิ</div></div>";
 
   if(searchTypeChart) searchTypeChart.destroy();
   searchTypeChart = new Chart(document.getElementById("searchTypeChart"), {
@@ -2417,6 +2417,12 @@ function loadData(){
         billAmount: parseMoney(r["Amount"]),
         discount: parseMoney(r["discount"]),
         vat: parseMoney(r["VAT"]),
+        // เงินสดที่เข้า/ออกจริง = ยอดก่อน VAT + VAT ของแถวนั้น (ยอดรวม VAT ในบิล)
+        cash: (function(){
+          const auto = parseMoney(r["amount_auto"]);
+          const base = auto > 0 ? auto : parseMoney(r["Amount"]) - parseMoney(r["VAT"]);
+          return base + parseMoney(r["VAT"]);
+        })(),
         vatCheck: String(r["Vat Check"] || "").trim().toUpperCase() === "TRUE",
         // Confirm VAT ใน Sheet มี 3 สถานะจริง: TRUE / FALSE / ว่าง (ยังไม่ตรวจ)
         // เก็บเป็น true / false / null เพื่อไม่ยุบ "ว่าง" ให้กลายเป็น FALSE โดยไม่ตั้งใจ
@@ -2485,19 +2491,19 @@ function applyFiltersAndRender(){
 }
 
 function calcStats(rows){
-  let income = 0, expense = 0, vatOnIncome = 0, vatOnExpense = 0;
+  let income = 0, expense = 0, vatOnIncome = 0, vatOnExpense = 0, cashIn = 0, cashOut = 0;
   rows.forEach(r => {
-    if(r.type === "รายได้"){ income += r.amount; vatOnIncome += r.vat || 0; }
-    else { expense += r.amount; vatOnExpense += r.vat || 0; }
+    if(r.type === "รายได้"){ income += r.amount; vatOnIncome += r.vat || 0; cashIn += r.cash || 0; }
+    else { expense += r.amount; vatOnExpense += r.vat || 0; cashOut += r.cash || 0; }
   });
   const net = income - expense;
   const margin = income > 0 ? (net / income * 100) : 0;
   // VAT สุทธิ = VAT ขาย (จากรายได้) - VAT ซื้อ (จากรายจ่าย, ใช้เป็นเครดิตหักได้)
   const vatTotal = vatOnIncome - vatOnExpense;
-  // กำไรสุทธิหลัง VAT = กำไรสุทธิ (จากยอดก่อน VAT) - VAT สุทธิที่ต้องนำส่ง
-  // ถ้า VAT ซื้อมากกว่า VAT ขาย จะได้เครดิตภาษีคืน กำไรหลัง VAT จึงสูงกว่ากำไรสุทธิ
-  const netAfterVat = net - vatTotal;
-  return {income, expense, net, margin, vatOnIncome, vatOnExpense, vatTotal, netAfterVat};
+  // มุมมองเงินสด: เงินเข้า/ออกจริงคือยอดรวม VAT และต้องกัน VAT สุทธิไว้จ่ายสรรพากร
+  // เงินเข้า − เงินออก − VAT สุทธิ = กำไรสุทธิ (ยอดก่อน VAT) จึงไม่หัก VAT ซ้ำ
+  const cashNet = cashIn - cashOut - vatTotal;
+  return {income, expense, net, margin, vatOnIncome, vatOnExpense, vatTotal, cashIn, cashOut, cashNet};
 }
 
 function bizMethodFilteredRows_(){
@@ -2577,23 +2583,23 @@ function render(rows, excludedNoDate){
   document.getElementById("expenseTotal").textContent = thb(overall.expense);
   document.getElementById("netTotal").textContent = thb(overall.net);
   document.getElementById("marginTotal").textContent = overall.margin.toFixed(1) + "%";
-  document.getElementById("vatSellTotal").textContent = thb(overall.vatOnIncome);
-  document.getElementById("vatBuyTotal").textContent = thb(overall.vatOnExpense);
+  document.getElementById("cashInTotal").textContent = thb(overall.cashIn);
+  document.getElementById("cashOutTotal").textContent = thb(overall.cashOut);
   const vatEl = document.getElementById("vatTotal");
   const vatSubEl = document.getElementById("vatTotalSub");
   if(overall.vatTotal >= 0){
     vatEl.textContent = thb(overall.vatTotal);
     vatEl.style.color = "";
-    vatSubEl.textContent = "VAT ขาย " + thb(overall.vatOnIncome) + " − VAT ซื้อ " + thb(overall.vatOnExpense) + " (ต้องนำส่ง)";
+    vatSubEl.textContent = "VAT ขาย " + thb(overall.vatOnIncome) + " − VAT ซื้อ " + thb(overall.vatOnExpense);
   } else {
     vatEl.textContent = "-" + thb(Math.abs(overall.vatTotal));
     vatEl.style.color = "var(--green)";
-    vatSubEl.textContent = "VAT ซื้อมากกว่า VAT ขาย (เครดิตภาษีสุทธิ)";
+    vatSubEl.textContent = "VAT ซื้อมากกว่า VAT ขาย (เครดิตภาษีที่จะได้รับคืน)";
   }
-  const navEl = document.getElementById("netAfterVatTotal");
-  navEl.textContent = (overall.netAfterVat < 0 ? "-" : "") + thb(Math.abs(overall.netAfterVat));
-  navEl.style.color = overall.netAfterVat >= 0 ? "var(--green)" : "var(--red)";
-  document.getElementById("netAfterVatSub").textContent = "กำไรสุทธิ " + thb(overall.net) + " − VAT สุทธิ " + (overall.vatTotal < 0 ? "(" + thb(overall.vatTotal) + ")" : thb(overall.vatTotal));
+  const cashEl = document.getElementById("cashNetTotal");
+  cashEl.textContent = (overall.cashNet < 0 ? "-" : "") + thb(Math.abs(overall.cashNet));
+  cashEl.style.color = overall.cashNet >= 0 ? "var(--green)" : "var(--red)";
+  document.getElementById("cashNetSub").textContent = "เงินเข้า − เงินออก − VAT สุทธิ (เท่ากับกำไรสุทธิ " + thb(overall.net) + ")";
 
   const creditReceivableRows = rows.filter(r => r.method === "เครดิต" && r.type === "รายได้");
   const creditPayableRows = rows.filter(r => r.method === "เครดิต" && r.type === "รายจ่าย");
@@ -2627,10 +2633,10 @@ function render(rows, excludedNoDate){
         "<div><div class='biz-stat-label'>รายรับ</div><div class='biz-stat-value' style='color:var(--green)'>" + thb(s.income) + "</div></div>" +
         "<div><div class='biz-stat-label'>รายจ่าย</div><div class='biz-stat-value' style='color:var(--red)'>" + thb(s.expense) + "</div></div>" +
         "<div><div class='biz-stat-label'>กำไรสุทธิ</div><div class='biz-stat-value'>" + thb(s.net) + "</div></div>" +
-        "<div><div class='biz-stat-label'>VAT ขาย</div><div class='biz-stat-value' style='color:var(--green)'>" + thb(s.vatOnIncome) + "</div></div>" +
-        "<div><div class='biz-stat-label'>VAT ซื้อ</div><div class='biz-stat-value' style='color:var(--red)'>" + thb(s.vatOnExpense) + "</div></div>" +
-        "<div><div class='biz-stat-label'>VAT สุทธิ</div><div class='biz-stat-value' style='color:" + (s.vatTotal >= 0 ? "var(--gold)" : "var(--green)") + "'>" + (s.vatTotal >= 0 ? thb(s.vatTotal) : "-" + thb(Math.abs(s.vatTotal))) + "</div></div>" +
-        "<div><div class='biz-stat-label'>กำไรสุทธิหลัง VAT</div><div class='biz-stat-value' style='color:" + (s.netAfterVat >= 0 ? "var(--green)" : "var(--red)") + "'>" + (s.netAfterVat < 0 ? "-" : "") + thb(Math.abs(s.netAfterVat)) + "</div></div>" +
+        "<div><div class='biz-stat-label'>เงินเข้ารวม VAT</div><div class='biz-stat-value' style='color:var(--green)'>" + thb(s.cashIn) + "</div></div>" +
+        "<div><div class='biz-stat-label'>เงินออกรวม VAT</div><div class='biz-stat-value' style='color:var(--red)'>" + thb(s.cashOut) + "</div></div>" +
+        "<div><div class='biz-stat-label'>VAT สุทธิ (กันไว้จ่ายสรรพากร)</div><div class='biz-stat-value' style='color:" + (s.vatTotal >= 0 ? "var(--gold)" : "var(--green)") + "'>" + (s.vatTotal >= 0 ? thb(s.vatTotal) : "-" + thb(Math.abs(s.vatTotal))) + "</div></div>" +
+        "<div><div class='biz-stat-label'>เงินสดคงเหลือ</div><div class='biz-stat-value' style='color:" + (s.cashNet >= 0 ? "var(--green)" : "var(--red)") + "'>" + (s.cashNet < 0 ? "-" : "") + thb(Math.abs(s.cashNet)) + "</div></div>" +
       "</div>" +
     "</div>";
   }).join("");
@@ -2805,10 +2811,10 @@ function buildReportElement_(){
     ["รายจ่ายรวม", thb(overall.expense), "#9A3B2E"],
     ["กำไรสุทธิ", thb(overall.net), "#232821"],
     ["อัตรากำไร", overall.margin.toFixed(1) + "%", "#3E5C78"],
-    ["VAT ขาย", thb(overall.vatOnIncome), "#2D6A4F"],
-    ["VAT ซื้อ", thb(overall.vatOnExpense), "#9A3B2E"],
-    ["VAT สุทธิ", (overall.vatTotal >= 0 ? thb(overall.vatTotal) : "-" + thb(Math.abs(overall.vatTotal))), "#B98A2E"],
-    ["กำไรสุทธิหลัง VAT", (overall.netAfterVat < 0 ? "-" : "") + thb(Math.abs(overall.netAfterVat)), overall.netAfterVat >= 0 ? "#2D6A4F" : "#9A3B2E"],
+    ["เงินเข้ารวม VAT", thb(overall.cashIn), "#2D6A4F"],
+    ["เงินออกรวม VAT", thb(overall.cashOut), "#9A3B2E"],
+    ["VAT สุทธิ (กันไว้จ่ายสรรพากร)", (overall.vatTotal >= 0 ? thb(overall.vatTotal) : "-" + thb(Math.abs(overall.vatTotal))), "#B98A2E"],
+    ["เงินสดคงเหลือ", (overall.cashNet < 0 ? "-" : "") + thb(Math.abs(overall.cashNet)), overall.cashNet >= 0 ? "#2D6A4F" : "#9A3B2E"],
     ["เครดิตค้างรับ", thb(creditRecv), "#2D6A4F"],
     ["เครดิตค้างจ่าย", thb(creditPay), "#9A3B2E"],
     ["จำนวนรายการ", rows.length + " รายการ", "#232821"]
@@ -2822,7 +2828,7 @@ function buildReportElement_(){
 
   html += "<div style='font-size:14px; font-weight:600; margin-bottom:10px;'>เปรียบเทียบตามธุรกิจ</div>";
   html += "<table style='width:100%; border-collapse:collapse; margin-bottom:24px; font-size:12px;'>";
-  html += "<tr>" + ["ธุรกิจ","รายรับ","รายจ่าย","กำไรสุทธิ","อัตรากำไร","VAT ขาย","VAT ซื้อ","VAT สุทธิ","กำไรสุทธิหลัง VAT"].map(h => "<th style='text-align:left; border-bottom:2px solid #232821; padding:6px 8px;'>" + h + "</th>").join("") + "</tr>";
+  html += "<tr>" + ["ธุรกิจ","รายรับ","รายจ่าย","กำไรสุทธิ","อัตรากำไร","เงินเข้ารวม VAT","เงินออกรวม VAT","VAT สุทธิ","เงินสดคงเหลือ"].map(h => "<th style='text-align:left; border-bottom:2px solid #232821; padding:6px 8px;'>" + h + "</th>").join("") + "</tr>";
   businesses.forEach(biz => {
     const s = calcStats(rows.filter(r => r.product === biz));
     html += "<tr>" +
@@ -2831,10 +2837,10 @@ function buildReportElement_(){
       "<td style='padding:6px 8px; border-bottom:1px solid #D8D2C0; color:#9A3B2E;'>" + thb(s.expense) + "</td>" +
       "<td style='padding:6px 8px; border-bottom:1px solid #D8D2C0; font-weight:600;'>" + thb(s.net) + "</td>" +
       "<td style='padding:6px 8px; border-bottom:1px solid #D8D2C0;'>" + s.margin.toFixed(1) + "%</td>" +
-      "<td style='padding:6px 8px; border-bottom:1px solid #D8D2C0; color:#2D6A4F;'>" + thb(s.vatOnIncome) + "</td>" +
-      "<td style='padding:6px 8px; border-bottom:1px solid #D8D2C0; color:#9A3B2E;'>" + thb(s.vatOnExpense) + "</td>" +
+      "<td style='padding:6px 8px; border-bottom:1px solid #D8D2C0; color:#2D6A4F;'>" + thb(s.cashIn) + "</td>" +
+      "<td style='padding:6px 8px; border-bottom:1px solid #D8D2C0; color:#9A3B2E;'>" + thb(s.cashOut) + "</td>" +
       "<td style='padding:6px 8px; border-bottom:1px solid #D8D2C0; color:#B98A2E;'>" + (s.vatTotal >= 0 ? thb(s.vatTotal) : "-" + thb(Math.abs(s.vatTotal))) + "</td>" +
-      "<td style='padding:6px 8px; border-bottom:1px solid #D8D2C0; font-weight:600; color:" + (s.netAfterVat >= 0 ? "#2D6A4F" : "#9A3B2E") + ";'>" + (s.netAfterVat < 0 ? "-" : "") + thb(Math.abs(s.netAfterVat)) + "</td>" +
+      "<td style='padding:6px 8px; border-bottom:1px solid #D8D2C0; font-weight:600; color:" + (s.cashNet >= 0 ? "#2D6A4F" : "#9A3B2E") + ";'>" + (s.cashNet < 0 ? "-" : "") + thb(Math.abs(s.cashNet)) + "</td>" +
       "</tr>";
   });
   html += "</table>";
